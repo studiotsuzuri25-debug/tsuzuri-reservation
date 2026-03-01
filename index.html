@@ -367,16 +367,27 @@
   // スケジュール取得
   // ==========================================
   async function loadSchedule() {
-    const month = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-    const res = await fetch(`${GAS_URL}?action=getSchedule&month=${month}`);
-    const json = await res.json();
-
-    scheduleData = {};
-    if (json.status === 'success') {
-      json.data.forEach(d => { scheduleData[d.date] = d; });
-    }
-    renderCalendar();
-  }
+  const month = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+  
+  return new Promise((resolve) => {
+    const callbackName = 'gasCallback_' + Date.now();
+    const script = document.createElement('script');
+    
+    window[callbackName] = function(json) {
+      scheduleData = {};
+      if (json.status === 'success') {
+        json.data.forEach(d => { scheduleData[d.date] = d; });
+      }
+      document.body.removeChild(script);
+      delete window[callbackName];
+      renderCalendar();
+      resolve();
+    };
+    
+    script.src = `${GAS_URL}?action=getSchedule&month=${month}&callback=${callbackName}`;
+    document.body.appendChild(script);
+  });
+}
 
   // ==========================================
   // カレンダー描画
