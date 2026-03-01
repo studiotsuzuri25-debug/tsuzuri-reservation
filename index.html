@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>studio TSUZURI 予約</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #fafafa;
+      color: #333;
+    }
+    header {
+      background: #fff;
+      padding: 16px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #555;
+    }
+    header p {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .container { padding: 16px; }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #777;
+      margin: 20px 0 10px;
+      letter-spacing: 1px;
+    }
+    .calendar-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .calendar-nav button {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .calendar-nav span {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .calendar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .day-header {
+      font-size: 11px;
+      color: #999;
+      padding: 4px 0;
+    }
+    .day-header.sun { color: #e57373; }
+    .day-header.sat { color: #64b5f6; }
+    .day-cell {
+      padding: 6px 2px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      min-height: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 2px;
+    }
+    .day-cell.empty { cursor: default; }
+    .day-cell.past { color: #ccc; cursor: default; }
+    .day-cell.sun .day-num { color: #e57373; }
+    .day-cell.sat .day-num { color: #64b5f6; }
+    .day-num { font-size: 13px; }
+    .slot-dots {
+      display: flex;
+      gap: 2px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .dot.available { background: #81c784; }
+    .dot.pending { background: #ffb74d; }
+    .dot.booked { background: #e0e0e0; }
+    .legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #999;
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .time-slot-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 2px solid #eee;
+      border-radius: 12px;
+      background: #fff;
+      font-size: 15px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .time-slot-btn:disabled {
+      background: #f5f5f5;
+      color: #bbb;
+      cursor: not-allowed;
+      border-color: #f0f0f0;
+    }
+    .time-slot-btn.selected {
+      border-color: #81c784;
+      background: #f1f8f1;
+    }
+    .time-slot-btn .slot-label { font-weight: 600; }
+    .time-slot-btn .slot-status {
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      background: #fafafa;
+    }
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #555;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      letter-spacing: 1px;
+    }
+    .btn-cancel {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: none;
+      color: #999;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+      font-size: 14px;
+    }
+    .complete-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .complete-screen.active { display: block; }
+    .complete-icon { font-size: 60px; margin-bottom: 16px; }
+    .complete-screen h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .complete-screen p {
+      font-size: 14px;
+      color: #777;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>studio TSUZURI</h1>
+  <p>撮影日のご予約</p>
+</header>
+
+<div class="container" id="mainContent">
+  <div class="loading" id="loading">読み込み中...</div>
+
+  <div id="calendarSection" style="display:none;">
+    <div class="section-title">SHOOTING DATE</div>
+    <div class="calendar-nav">
+      <button onclick="changeMonth(-1)">&#8249;</button>
+      <span id="monthLabel"></span>
+      <button onclick="changeMonth(1)">&#8250;</button>
+    </div>
+    <div class="calendar">
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="dot available"></div>空き</div>
+        <div class="legend-item"><div class="dot pending"></div>仮押さえ</div>
+        <div class="legend-item"><div class="dot booked"></div>埋まり</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 時間帯選択・予約フォーム モーダル -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">撮影日を選択</h2>
+
+    <!-- Step1: 時間帯選択 -->
+    <div id="stepTimeSlot">
+      <button class="time-slot-btn" id="btnMorning" onclick="selectTimeSlot('午前')">
+        <div class="slot-label">☀️ 午前</div>
+        <div class="slot-status" id="morningStatus"></div>
+      </button>
+      <button class="time-slot-btn" id="btnAfternoon" onclick="selectTimeSlot('午後')">
+        <div class="slot-label">🌤 午後</div>
+        <div class="slot-status" id="afternoonStatus"></div>
+      </button>
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+    </div>
+
+    <!-- Step2: 予約フォーム -->
+    <div id="stepForm" style="display:none;">
+      <div class="form-group">
+        <label>お名前 *</label>
+        <input type="text" id="inputName" placeholder="例：山田 花子">
+      </div>
+      <div class="form-group">
+        <label>電話番号 *</label>
+        <input type="tel" id="inputPhone" placeholder="例：090-1234-5678">
+      </div>
+      <div class="form-group">
+        <label>撮影目的 *</label>
+        <select id="inputPurpose">
+          <option value="">選択してください</option>
+          <option>家族写真</option>
+          <option>マタニティ</option>
+          <option>ニューボーン</option>
+          <option>お宮参り</option>
+          <option>七五三</option>
+          <option>記念写真</option>
+          <option>その他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>撮影人数 *</label>
+        <select id="inputCount">
+          <option value="">選択してください</option>
+          <option>1名</option>
+          <option>2名</option>
+          <option>3名</option>
+          <option>4名</option>
+          <option>5名以上</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ご要望・ご質問（任意）</label>
+        <textarea id="inputNote" rows="3" placeholder="自由にご記入ください"></textarea>
+      </div>
+      <button class="btn-primary" onclick="submitReservation()">予約リクエストを送信</button>
+      <button class="btn-cancel" onclick="backToTimeSlot()">← 時間帯を選び直す</button>
+    </div>
+  </div>
+</div>
+
+<!-- 完了画面 -->
+<div class="complete-screen" id="completeScreen">
+  <div class="complete-icon">📅</div>
+  <h2>リクエスト送信完了</h2>
+  <p>予約リクエストを受け付けました。<br>確認後、LINEにてご連絡いたします。<br><br>しばらくお待ちください。</p>
+</div>
+
+<script>
+  // ==========================================
+  // 設定
+  // ==========================================
+  const GAS_URL = 'ここにGASのURLを入力';
+  const LIFF_ID = 'ここにLIFF IDを入力';
+
+  let currentYear, currentMonth;
+  let scheduleData = {};
+  let selectedDate = null;
+  let selectedTimeSlot = null;
+  let lineProfile = null;
+
+  // ==========================================
+  // 初期化
+  // ==========================================
+  async function init() {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    lineProfile = await liff.getProfile();
+
+    const now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth() + 1;
+
+    await loadSchedule();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('calendarSection').style.display = 'block';
+  }
+
+  // ==========================================
+  // スケジュール取得
+  // ==========================================
+  async function loadSchedule() {
+    const month = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+    const res = await fetch(`${GAS_URL}?action=getSchedule&month=${month}`);
+    const json = await res.json();
+
+    scheduleData = {};
+    if (json.status === 'success') {
+      json.data.forEach(d => { scheduleData[d.date] = d; });
+    }
+    renderCalendar();
+  }
+
+  // ==========================================
+  // カレンダー描画
+  // ==========================================
+  function renderCalendar() {
+    const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    document.getElementById('monthLabel').textContent = `${currentYear}年 ${monthNames[currentMonth - 1]}`;
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    const dayHeaders = ['日','月','火','水','木','金','土'];
+    const dayClasses = ['sun','','','','','','sat'];
+    dayHeaders.forEach((d, i) => {
+      const el = document.createElement('div');
+      el.className = `day-header ${dayClasses[i]}`;
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < firstDay; i++) {
+      const el = document.createElement('div');
+      el.className = 'day-cell empty';
+      grid.appendChild(el);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dateObj = new Date(currentYear, currentMonth - 1, d);
+      const dayOfWeek = dateObj.getDay();
+      const isPast = dateObj < today;
+
+      const cell = document.createElement('div');
+      let cellClass = 'day-cell';
+      if (dayOfWeek === 0) cellClass += ' sun';
+      if (dayOfWeek === 6) cellClass += ' sat';
+      if (isPast) cellClass += ' past';
+      cell.className = cellClass;
+
+      const numEl = document.createElement('div');
+      numEl.className = 'day-num';
+      numEl.textContent = d;
+      cell.appendChild(numEl);
+
+      if (!isPast && scheduleData[dateStr]) {
+        const s = scheduleData[dateStr];
+        const dotsEl = document.createElement('div');
+        dotsEl.className = 'slot-dots';
+
+        const mDot = document.createElement('div');
+        mDot.className = `dot ${getDotClass(s.morning)}`;
+        const aDot = document.createElement('div');
+        aDot.className = `dot ${getDotClass(s.afternoon)}`;
+
+        dotsEl.appendChild(mDot);
+        dotsEl.appendChild(aDot);
+        cell.appendChild(dotsEl);
+
+        if (s.morning === '空き' || s.afternoon === '空き') {
+          cell.onclick = () => openModal(dateStr, s);
+        }
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function getDotClass(status) {
+    if (status === '空き') return 'available';
+    if (status === '仮押さえ') return 'pending';
+    return 'booked';
+  }
+
+  // ==========================================
+  // 月の変更
+  // ==========================================
+  async function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    await loadSchedule();
+  }
+
+  // ==========================================
+  // モーダル操作
+  // ==========================================
+  function openModal(dateStr, slotData) {
+    selectedDate = dateStr;
+    const [year, month, day] = dateStr.split('-');
+    document.getElementById('modalTitle').textContent = `${year}年${parseInt(month)}月${parseInt(day)}日`;
+
+    const btnM = document.getElementById('btnMorning');
+    const btnA = document.getElementById('btnAfternoon');
+
+    btnM.disabled = slotData.morning !== '空き';
+    document.getElementById('morningStatus').textContent = slotData.morning === '空き' ? '予約可能' : slotData.morning;
+
+    btnA.disabled = slotData.afternoon !== '空き';
+    document.getElementById('afternoonStatus').textContent = slotData.afternoon === '空き' ? '予約可能' : slotData.afternoon;
+
+    document.getElementById('stepTimeSlot').style.display = 'block';
+    document.getElementById('stepForm').style.display = 'none';
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+    selectedDate = null;
+    selectedTimeSlot = null;
+  }
+
+  function selectTimeSlot(slot) {
+    selectedTimeSlot = slot;
+    document.getElementById('stepTimeSlot').style.display = 'none';
+    document.getElementById('stepForm').style.display = 'block';
+  }
+
+  function backToTimeSlot() {
+    document.getElementById('stepTimeSlot').style.display = 'block';
+    document.getElementById('stepForm').style.display = 'none';
+  }
+
+  // ==========================================
+  // 予約送信
+  // ==========================================
+  async function submitReservation() {
+    const name = document.getElementById('inputName').value.trim();
+    const phone = document.getElementById('inputPhone').value.trim();
+    const purpose = document.getElementById('inputPurpose').value;
+    const count = document.getElementById('inputCount').value;
+    const note = document.getElementById('inputNote').value.trim();
+
+    if (!name || !phone || !purpose || !count) {
+      alert('必須項目をすべて入力してください。');
+      return;
+    }
+
+    const params = {
+      action: 'createReservation',
+      lineUserId: lineProfile.userId,
+      name: name,
+      date: selectedDate,
+      timeSlot: selectedTimeSlot,
+      phone: phone,
+      purpose: purpose,
+      count: count,
+      note: note,
+    };
+
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+      const json = await res.json();
+
+      if (json.status === 'success') {
+        document.getElementById('modalOverlay').classList.remove('active');
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('completeScreen').classList.add('active');
+      } else {
+        alert('エラーが発生しました。もう一度お試しください。');
+      }
+    } catch (e) {
+      alert('通信エラーが発生しました。もう一度お試しください。');
+    }
+  }
+
+  // ==========================================
+  // 起動
+  // ==========================================
+  init();
+</script>
+</body>
+</html>
