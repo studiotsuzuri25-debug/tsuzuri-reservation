@@ -6,32 +6,17 @@
   <title>studio TSUZURI 管理画面</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f5f5;
-      color: #333;
-    }
-    header {
-      background: #333;
-      padding: 16px;
-      text-align: center;
-    }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; color: #333; }
+    header { background: #333; padding: 16px; text-align: center; }
     header h1 { font-size: 16px; font-weight: 600; letter-spacing: 2px; color: #fff; }
     header p { font-size: 11px; color: #aaa; margin-top: 4px; }
-    .tab-bar { display: flex; background: #fff; border-bottom: 1px solid #eee; }
-    .tab {
-      flex: 1; padding: 12px 4px; text-align: center;
-      font-size: 12px; cursor: pointer; color: #999;
-      border-bottom: 2px solid transparent;
-    }
+    .tab-bar { display: flex; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; }
+    .tab { flex-shrink: 0; padding: 12px 14px; text-align: center; font-size: 12px; cursor: pointer; color: #999; border-bottom: 2px solid transparent; white-space: nowrap; }
     .tab.active { color: #333; border-bottom: 2px solid #333; font-weight: 600; }
     .tab-content { display: none; padding: 16px; }
     .tab-content.active { display: block; }
     .section-title { font-size: 13px; font-weight: 600; color: #777; margin-bottom: 12px; letter-spacing: 1px; }
-    .reservation-card {
-      background: #fff; border-radius: 12px; padding: 16px;
-      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
+    .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .card-name { font-size: 16px; font-weight: 600; }
     .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
@@ -40,14 +25,11 @@
     .status-badge.rejected { background: #fce4ec; color: #c62828; }
     .card-detail { font-size: 13px; color: #666; margin-bottom: 4px; }
     .card-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-confirm {
-      flex: 1; padding: 10px; background: #388e3c; color: #fff;
-      border: none; border-radius: 8px; font-size: 14px; cursor: pointer;
-    }
-    .btn-reject {
-      flex: 1; padding: 10px; background: #fff; color: #c62828;
-      border: 1px solid #c62828; border-radius: 8px; font-size: 14px; cursor: pointer;
-    }
+    .btn-confirm { flex: 1; padding: 10px; background: #388e3c; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .btn-reject { flex: 1; padding: 10px; background: #fff; color: #c62828; border: 1px solid #c62828; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .extra-answers { margin-top: 8px; padding: 8px 12px; background: #f9f9f9; border-radius: 8px; }
+    .extra-answer-item { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .extra-answer-item strong { color: #555; }
     .calendar { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px; }
     .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .calendar-nav button { background: none; border: 1px solid #ddd; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
@@ -61,40 +43,36 @@
     .day-num { font-size: 12px; }
     .slot-tag { font-size: 9px; padding: 1px 4px; border-radius: 3px; width: 100%; text-align: center; }
     .slot-tag.available { background: #e8f5e9; color: #388e3c; }
-    .slot-tag.pending { background: #fff3e0; color: #f57c00; }
-    .slot-tag.confirmed { background: #e3f2fd; color: #1565c0; }
+    .slot-tag.partial { background: #fff3e0; color: #f57c00; }
     .slot-tag.closed { background: #f5f5f5; color: #bbb; }
-    .schedule-card {
-      background: #fff; border-radius: 12px; padding: 16px;
-      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    .schedule-card-header {
-      display: flex; justify-content: space-between;
-      align-items: center; margin-bottom: 12px;
-    }
+    .schedule-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .schedule-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .schedule-date { font-size: 15px; font-weight: 600; }
-    .btn-delete-date {
-      padding: 4px 10px; background: none; border: 1px solid #ddd;
-      border-radius: 6px; font-size: 12px; color: #999; cursor: pointer;
-    }
+    .btn-delete-date { padding: 4px 10px; background: none; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; color: #999; cursor: pointer; }
     .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .slot-toggle {
-      padding: 8px 4px; border-radius: 8px; font-size: 12px;
-      text-align: center; cursor: pointer; border: 1px solid #eee;
-      font-weight: 600;
-    }
+    .slot-toggle { padding: 8px 4px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; border: 1px solid #eee; font-weight: 600; }
     .slot-toggle.available { background: #e8f5e9; color: #388e3c; border-color: #c8e6c9; }
     .slot-toggle.closed { background: #f5f5f5; color: #bbb; border-color: #eee; }
     .slot-toggle.pending { background: #fff3e0; color: #f57c00; border-color: #ffe0b2; cursor: not-allowed; }
     .slot-toggle.confirmed { background: #e3f2fd; color: #1565c0; border-color: #bbdefb; cursor: not-allowed; }
-    .add-schedule-form {
-      background: #fff; border-radius: 12px; padding: 16px;
-      margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
+    .add-form { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 12px; color: #777; margin-bottom: 6px; }
-    .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fafafa; }
     .btn-primary { width: 100%; padding: 12px; background: #333; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .btn-secondary { padding: 6px 12px; background: none; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; color: #666; cursor: pointer; }
+    .btn-danger { padding: 6px 12px; background: none; border: 1px solid #e57373; border-radius: 6px; font-size: 12px; color: #e57373; cursor: pointer; }
+    .question-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .question-title { font-size: 14px; font-weight: 600; flex: 1; margin-right: 8px; }
+    .question-meta { font-size: 12px; color: #999; margin-bottom: 8px; }
+    .question-actions { display: flex; gap: 6px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+    .badge.required { background: #fce4ec; color: #c62828; }
+    .badge.optional { background: #f5f5f5; color: #999; }
+    .badge.enabled { background: #e8f5e9; color: #388e3c; }
+    .badge.disabled { background: #f5f5f5; color: #bbb; }
+    .type-badge { background: #e3f2fd; color: #1565c0; }
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
     .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .stat-number { font-size: 28px; font-weight: 700; color: #333; }
@@ -108,6 +86,12 @@
     .bar-value { width: 24px; font-size: 11px; color: #555; }
     .loading { text-align: center; padding: 40px; color: #999; font-size: 13px; }
     .empty { text-align: center; padding: 40px; color: #bbb; font-size: 13px; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .options-hint { font-size: 11px; color: #aaa; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -121,14 +105,17 @@
   <div class="tab active" onclick="switchTab('reservations', this)">予約一覧</div>
   <div class="tab" onclick="switchTab('calendar', this)">カレンダー</div>
   <div class="tab" onclick="switchTab('schedule', this)">営業日設定</div>
+  <div class="tab" onclick="switchTab('questions', this)">質問設定</div>
   <div class="tab" onclick="switchTab('stats', this)">分析</div>
 </div>
 
+<!-- 予約一覧 -->
 <div class="tab-content active" id="tab-reservations">
   <div class="section-title">予約リクエスト一覧</div>
   <div id="reservationList"><div class="loading">読み込み中...</div></div>
 </div>
 
+<!-- カレンダー -->
 <div class="tab-content" id="tab-calendar">
   <div class="calendar">
     <div class="calendar-nav">
@@ -140,8 +127,9 @@
   </div>
 </div>
 
+<!-- 営業日設定 -->
 <div class="tab-content" id="tab-schedule">
-  <div class="add-schedule-form">
+  <div class="add-form">
     <div class="section-title">営業日を追加</div>
     <div class="form-group">
       <label>日付</label>
@@ -152,11 +140,91 @@
   <div id="scheduleList"><div class="loading">読み込み中...</div></div>
 </div>
 
+<!-- 質問設定 -->
+<div class="tab-content" id="tab-questions">
+  <div class="add-form">
+    <div class="section-title">質問を追加</div>
+    <div class="form-group">
+      <label>質問文 *</label>
+      <input type="text" id="qQuestion" placeholder="例：衣装の枚数はいくつですか？">
+    </div>
+    <div class="form-group">
+      <label>回答形式 *</label>
+      <select id="qType" onchange="toggleOptionsField()">
+        <option value="テキスト">テキスト入力（自由記述）</option>
+        <option value="プルダウン">プルダウン選択</option>
+        <option value="ラジオ">ラジオボタン（1つ選択）</option>
+        <option value="チェック">チェックボックス（複数選択）</option>
+      </select>
+    </div>
+    <div class="form-group" id="optionsField" style="display:none;">
+      <label>選択肢（カンマ区切り）*</label>
+      <input type="text" id="qOptions" placeholder="例：1枚,2枚,3枚,4枚以上">
+      <div class="options-hint">選択肢をカンマ（,）で区切って入力してください</div>
+    </div>
+    <div class="form-group">
+      <label>必須/任意</label>
+      <select id="qRequired">
+        <option value="任意">任意</option>
+        <option value="必須">必須</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="addQuestion()">質問を追加する</button>
+  </div>
+  <div class="section-title">質問一覧</div>
+  <div id="questionList"><div class="loading">読み込み中...</div></div>
+</div>
+
+<!-- 分析 -->
 <div class="tab-content" id="tab-stats">
   <div class="stats-grid" id="statsGrid"><div class="loading">読み込み中...</div></div>
   <div class="chart-bar-container" id="chartContainer" style="display:none;">
     <div class="chart-title">時間帯別 確定数</div>
     <div id="timeChart"></div>
+  </div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>質問を編集</h3>
+    <input type="hidden" id="editId">
+    <div class="form-group">
+      <label>質問文 *</label>
+      <input type="text" id="editQuestion">
+    </div>
+    <div class="form-group">
+      <label>回答形式 *</label>
+      <select id="editType" onchange="toggleEditOptionsField()">
+        <option value="テキスト">テキスト入力（自由記述）</option>
+        <option value="プルダウン">プルダウン選択</option>
+        <option value="ラジオ">ラジオボタン（1つ選択）</option>
+        <option value="チェック">チェックボックス（複数選択）</option>
+      </select>
+    </div>
+    <div class="form-group" id="editOptionsField">
+      <label>選択肢（カンマ区切り）</label>
+      <input type="text" id="editOptions">
+      <div class="options-hint">選択肢をカンマ（,）で区切って入力してください</div>
+    </div>
+    <div class="form-group">
+      <label>必須/任意</label>
+      <select id="editRequired">
+        <option value="任意">任意</option>
+        <option value="必須">必須</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>有効/無効</label>
+      <select id="editEnabled">
+        <option value="有効">有効（フォームに表示）</option>
+        <option value="無効">無効（フォームに非表示）</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveEditQuestion()" style="flex:1;">保存する</button>
+      <button class="btn-secondary" onclick="closeEditModal()">キャンセル</button>
+    </div>
   </div>
 </div>
 
@@ -167,6 +235,7 @@
   let adminYear, adminMonth;
   let allReservations = [];
   let allSchedule = [];
+  let allQuestions = [];
 
   function switchTab(name, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -179,11 +248,14 @@
     const now = new Date();
     adminYear = now.getFullYear();
     adminMonth = now.getMonth() + 1;
-    await Promise.all([loadReservations(), loadScheduleData()]);
+    await Promise.all([loadReservations(), loadScheduleData(), loadQuestions()]);
     renderAdminCalendar();
     renderStats();
   }
 
+  // ==========================================
+  // 予約関連
+  // ==========================================
   function loadReservations() {
     return new Promise((resolve) => {
       const cb = 'cb_res_' + Date.now();
@@ -211,24 +283,33 @@
       return;
     }
 
-    list.innerHTML = sorted.map(r => `
-      <div class="reservation-card">
-        <div class="card-header">
-          <div class="card-name">${r.name}</div>
-          <div class="status-badge ${getStatusClass(r.status)}">${r.status}</div>
+    list.innerHTML = sorted.map(r => {
+      const extras = r.extraAnswers && r.extraAnswers.length > 0
+        ? `<div class="extra-answers">${r.extraAnswers.map(a =>
+            `<div class="extra-answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`
+          ).join('')}</div>`
+        : '';
+
+      return `
+        <div class="card">
+          <div class="card-header">
+            <div class="card-name">${r.name}</div>
+            <div class="status-badge ${getStatusClass(r.status)}">${r.status}</div>
+          </div>
+          <div class="card-detail">📅 ${r.date}　🕐 ${r.timeSlot}〜</div>
+          <div class="card-detail">📞 ${r.phone || '-'}</div>
+          <div class="card-detail">🎯 ${r.purpose || '-'}　👥 ${r.count || '-'}</div>
+          ${r.note ? `<div class="card-detail">📝 ${r.note}</div>` : ''}
+          ${extras}
+          <div class="card-detail" style="color:#bbb;font-size:11px;">リクエスト：${r.requestedAt}</div>
+          ${r.status === '仮押さえ' ? `
+          <div class="card-actions">
+            <button class="btn-confirm" onclick="updateStatus('${r.id}', '確定')">✓ 確定</button>
+            <button class="btn-reject" onclick="updateStatus('${r.id}', '不可')">✗ 不可</button>
+          </div>` : ''}
         </div>
-        <div class="card-detail">📅 ${r.date}　🕐 ${r.timeSlot}〜</div>
-        <div class="card-detail">📞 ${r.phone || '-'}</div>
-        <div class="card-detail">🎯 ${r.purpose || '-'}　👥 ${r.count || '-'}</div>
-        ${r.note ? `<div class="card-detail">📝 ${r.note}</div>` : ''}
-        <div class="card-detail" style="color:#bbb;font-size:11px;">リクエスト：${r.requestedAt}</div>
-        ${r.status === '仮押さえ' ? `
-        <div class="card-actions">
-          <button class="btn-confirm" onclick="updateStatus('${r.id}', '確定')">✓ 確定</button>
-          <button class="btn-reject" onclick="updateStatus('${r.id}', '不可')">✗ 不可</button>
-        </div>` : ''}
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   function getStatusClass(status) {
@@ -260,6 +341,9 @@
     }
   }
 
+  // ==========================================
+  // 営業日関連
+  // ==========================================
   function loadScheduleData() {
     return new Promise((resolve) => {
       const cb = 'cb_sch_' + Date.now();
@@ -358,6 +442,9 @@
     }
   }
 
+  // ==========================================
+  // カレンダー
+  // ==========================================
   function renderAdminCalendar() {
     const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
     document.getElementById('adminMonthLabel').textContent = `${adminYear}年 ${monthNames[adminMonth - 1]}`;
@@ -394,7 +481,7 @@
         const slots = Object.values(s.slots);
         const availCount = slots.filter(v => v === '空き').length;
         const tag = document.createElement('div');
-        tag.className = `slot-tag ${availCount === slots.length ? 'available' : availCount > 0 ? 'pending' : 'closed'}`;
+        tag.className = `slot-tag ${availCount === slots.length ? 'available' : availCount > 0 ? 'partial' : 'closed'}`;
         tag.textContent = `${availCount}枠`;
         cell.appendChild(tag);
       }
@@ -410,6 +497,161 @@
     renderAdminCalendar();
   }
 
+  // ==========================================
+  // 質問設定関連
+  // ==========================================
+  function toggleOptionsField() {
+    const type = document.getElementById('qType').value;
+    document.getElementById('optionsField').style.display =
+      ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
+  }
+
+  function toggleEditOptionsField() {
+    const type = document.getElementById('editType').value;
+    document.getElementById('editOptionsField').style.display =
+      ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
+  }
+
+  function loadQuestions() {
+    return new Promise((resolve) => {
+      const cb = 'cb_q_' + Date.now();
+      const s = document.createElement('script');
+      window[cb] = (json) => {
+        allQuestions = json.data || [];
+        renderQuestions();
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb];
+        resolve();
+      };
+      s.src = `${GAS_URL}?action=getAllFormQuestions&callback=${cb}`;
+      document.body.appendChild(s);
+    });
+  }
+
+  function renderQuestions() {
+    const list = document.getElementById('questionList');
+    if (allQuestions.length === 0) {
+      list.innerHTML = '<div class="empty">質問がありません。上のフォームから追加してください。</div>';
+      return;
+    }
+
+    const typeLabels = { 'テキスト': '自由記述', 'プルダウン': 'プルダウン', 'ラジオ': 'ラジオ', 'チェック': 'チェック' };
+
+    list.innerHTML = allQuestions.map(q => `
+      <div class="question-card">
+        <div class="question-card-header">
+          <div class="question-title">${q.order}. ${q.question}</div>
+        </div>
+        <div class="question-meta">
+          <span class="badge type-badge">${typeLabels[q.type] || q.type}</span>
+          <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
+          <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
+          ${q.options && q.options.length > 0 ? `<span style="font-size:11px;color:#aaa;">選択肢：${q.options.join('、')}</span>` : ''}
+        </div>
+        <div class="question-actions">
+          <button class="btn-secondary" onclick="openEditModal('${q.id}')">編集</button>
+          <button class="btn-danger" onclick="deleteQuestion('${q.id}')">削除</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function addQuestion() {
+    const question = document.getElementById('qQuestion').value.trim();
+    const type = document.getElementById('qType').value;
+    const options = document.getElementById('qOptions').value.trim();
+    const required = document.getElementById('qRequired').value;
+
+    if (!question) { alert('質問文を入力してください。'); return; }
+    if (['プルダウン','ラジオ','チェック'].includes(type) && !options) {
+      alert('選択肢を入力してください。'); return;
+    }
+
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addFormQuestion', question, type, options, required }),
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        document.getElementById('qQuestion').value = '';
+        document.getElementById('qOptions').value = '';
+        document.getElementById('qRequired').value = '任意';
+        document.getElementById('qType').value = 'テキスト';
+        toggleOptionsField();
+        await loadQuestions();
+      } else {
+        alert('エラーが発生しました。');
+      }
+    } catch (e) {
+      alert('通信エラーが発生しました。');
+    }
+  }
+
+  function openEditModal(id) {
+    const q = allQuestions.find(x => x.id === id);
+    if (!q) return;
+
+    document.getElementById('editId').value = q.id;
+    document.getElementById('editQuestion').value = q.question;
+    document.getElementById('editType').value = q.type;
+    document.getElementById('editOptions').value = q.options ? q.options.join(',') : '';
+    document.getElementById('editRequired').value = q.required;
+    document.getElementById('editEnabled').value = q.enabled;
+    toggleEditOptionsField();
+    document.getElementById('editModal').classList.add('active');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+  }
+
+  async function saveEditQuestion() {
+    const id = document.getElementById('editId').value;
+    const question = document.getElementById('editQuestion').value.trim();
+    const type = document.getElementById('editType').value;
+    const options = document.getElementById('editOptions').value.trim();
+    const required = document.getElementById('editRequired').value;
+    const enabled = document.getElementById('editEnabled').value;
+
+    if (!question) { alert('質問文を入力してください。'); return; }
+
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'updateFormQuestion', id, question, type, options, required, enabled }),
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        closeEditModal();
+        await loadQuestions();
+      } else {
+        alert('エラーが発生しました。');
+      }
+    } catch (e) {
+      alert('通信エラーが発生しました。');
+    }
+  }
+
+  async function deleteQuestion(id) {
+    if (!confirm('この質問を削除しますか？')) return;
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'deleteFormQuestion', id }),
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        await loadQuestions();
+      }
+    } catch (e) {
+      alert('通信エラーが発生しました。');
+    }
+  }
+
+  // ==========================================
+  // 分析
+  // ==========================================
   function renderStats() {
     const total = allReservations.length;
     const confirmed = allReservations.filter(r => r.status === '確定').length;
