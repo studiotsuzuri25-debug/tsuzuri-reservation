@@ -27,9 +27,9 @@
     .card-actions { display: flex; gap: 8px; margin-top: 12px; }
     .btn-confirm { flex: 1; padding: 10px; background: #388e3c; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
     .btn-reject { flex: 1; padding: 10px; background: #fff; color: #c62828; border: 1px solid #c62828; border-radius: 8px; font-size: 14px; cursor: pointer; }
-    .extra-answers { margin-top: 8px; padding: 8px 12px; background: #f9f9f9; border-radius: 8px; }
-    .extra-answer-item { font-size: 12px; color: #666; margin-bottom: 4px; }
-    .extra-answer-item strong { color: #555; }
+    .answers-block { margin-top: 8px; padding: 8px 12px; background: #f9f9f9; border-radius: 8px; }
+    .answer-item { font-size: 12px; color: #666; margin-bottom: 3px; }
+    .answer-item strong { color: #555; }
     .calendar { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px; }
     .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .calendar-nav button { background: none; border: 1px solid #ddd; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
@@ -48,7 +48,6 @@
     .schedule-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .schedule-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .schedule-date { font-size: 15px; font-weight: 600; }
-    .btn-delete-date { padding: 4px 10px; background: none; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; color: #999; cursor: pointer; }
     .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .slot-toggle { padding: 8px 4px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; border: 1px solid #eee; font-weight: 600; }
     .slot-toggle.available { background: #e8f5e9; color: #388e3c; border-color: #c8e6c9; }
@@ -62,17 +61,25 @@
     .btn-primary { width: 100%; padding: 12px; background: #333; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
     .btn-secondary { padding: 6px 12px; background: none; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; color: #666; cursor: pointer; }
     .btn-danger { padding: 6px 12px; background: none; border: 1px solid #e57373; border-radius: 6px; font-size: 12px; color: #e57373; cursor: pointer; }
-    .question-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .question-title { font-size: 14px; font-weight: 600; flex: 1; margin-right: 8px; }
-    .question-meta { font-size: 12px; color: #999; margin-bottom: 8px; }
+    .btn-small { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #555; }
+    .menu-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .menu-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .menu-name { font-size: 15px; font-weight: 600; }
+    .menu-desc { font-size: 12px; color: #999; margin-bottom: 10px; }
+    .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .question-card { background: #f9f9f9; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+    .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .question-title { font-size: 13px; font-weight: 600; flex: 1; margin-right: 8px; }
+    .question-meta { font-size: 11px; color: #999; margin: 4px 0 6px; }
     .question-actions { display: flex; gap: 6px; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
     .badge.required { background: #fce4ec; color: #c62828; }
     .badge.optional { background: #f5f5f5; color: #999; }
     .badge.enabled { background: #e8f5e9; color: #388e3c; }
     .badge.disabled { background: #f5f5f5; color: #bbb; }
-    .type-badge { background: #e3f2fd; color: #1565c0; }
+    .badge.type { background: #e3f2fd; color: #1565c0; }
+    .menu-questions-section { margin-top: 12px; border-top: 1px solid #eee; padding-top: 12px; }
+    .menu-questions-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; }
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
     .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .stat-number { font-size: 28px; font-weight: 700; color: #333; }
@@ -82,7 +89,7 @@
     .bar-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
     .bar-label { width: 40px; font-size: 11px; color: #777; text-align: right; }
     .bar-track { flex: 1; background: #f0f0f0; border-radius: 4px; height: 20px; overflow: hidden; }
-    .bar-fill { height: 100%; background: #81c784; border-radius: 4px; transition: width 0.5s; }
+    .bar-fill { height: 100%; background: #81c784; border-radius: 4px; }
     .bar-value { width: 24px; font-size: 11px; color: #555; }
     .loading { text-align: center; padding: 40px; color: #999; font-size: 13px; }
     .empty { text-align: center; padding: 40px; color: #bbb; font-size: 13px; }
@@ -92,6 +99,7 @@
     .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
     .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
     .options-hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+    .expand-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; padding: 4px 0; }
   </style>
 </head>
 <body>
@@ -105,7 +113,8 @@
   <div class="tab active" onclick="switchTab('reservations', this)">予約一覧</div>
   <div class="tab" onclick="switchTab('calendar', this)">カレンダー</div>
   <div class="tab" onclick="switchTab('schedule', this)">営業日設定</div>
-  <div class="tab" onclick="switchTab('questions', this)">質問設定</div>
+  <div class="tab" onclick="switchTab('menus', this)">メニュー設定</div>
+  <div class="tab" onclick="switchTab('questions', this)">共通質問</div>
   <div class="tab" onclick="switchTab('stats', this)">分析</div>
 </div>
 
@@ -140,27 +149,45 @@
   <div id="scheduleList"><div class="loading">読み込み中...</div></div>
 </div>
 
-<!-- 質問設定 -->
+<!-- メニュー設定 -->
+<div class="tab-content" id="tab-menus">
+  <div class="add-form">
+    <div class="section-title">メニューを追加</div>
+    <div class="form-group">
+      <label>メニュー名 *</label>
+      <input type="text" id="menuName" placeholder="例：お宮参り">
+    </div>
+    <div class="form-group">
+      <label>説明（任意）</label>
+      <input type="text" id="menuDesc" placeholder="例：生後1ヶ月前後のお子様の撮影">
+    </div>
+    <button class="btn-primary" onclick="addMenu()">メニューを追加する</button>
+  </div>
+  <div class="section-title">メニュー一覧</div>
+  <div id="menuList"><div class="loading">読み込み中...</div></div>
+</div>
+
+<!-- 共通質問 -->
 <div class="tab-content" id="tab-questions">
   <div class="add-form">
-    <div class="section-title">質問を追加</div>
+    <div class="section-title">共通質問を追加（全メニュー共通）</div>
     <div class="form-group">
       <label>質問文 *</label>
-      <input type="text" id="qQuestion" placeholder="例：衣装の枚数はいくつですか？">
+      <input type="text" id="qQuestion" placeholder="例：ご要望があればお書きください">
     </div>
     <div class="form-group">
       <label>回答形式 *</label>
-      <select id="qType" onchange="toggleOptionsField()">
+      <select id="qType" onchange="toggleOptionsField('qOptions', 'qType')">
         <option value="テキスト">テキスト入力（自由記述）</option>
         <option value="プルダウン">プルダウン選択</option>
         <option value="ラジオ">ラジオボタン（1つ選択）</option>
         <option value="チェック">チェックボックス（複数選択）</option>
       </select>
     </div>
-    <div class="form-group" id="optionsField" style="display:none;">
+    <div class="form-group" id="qOptionsWrap" style="display:none;">
       <label>選択肢（カンマ区切り）*</label>
-      <input type="text" id="qOptions" placeholder="例：1枚,2枚,3枚,4枚以上">
-      <div class="options-hint">選択肢をカンマ（,）で区切って入力してください</div>
+      <input type="text" id="qOptions" placeholder="例：希望する,不要">
+      <div class="options-hint">カンマ（,）で区切って入力してください</div>
     </div>
     <div class="form-group">
       <label>必須/任意</label>
@@ -169,9 +196,9 @@
         <option value="必須">必須</option>
       </select>
     </div>
-    <button class="btn-primary" onclick="addQuestion()">質問を追加する</button>
+    <button class="btn-primary" onclick="addCommonQuestion()">共通質問を追加する</button>
   </div>
-  <div class="section-title">質問一覧</div>
+  <div class="section-title">共通質問一覧</div>
   <div id="questionList"><div class="loading">読み込み中...</div></div>
 </div>
 
@@ -184,46 +211,101 @@
   </div>
 </div>
 
-<!-- 編集モーダル -->
-<div class="modal-overlay" id="editModal">
+<!-- 編集モーダル（共通質問） -->
+<div class="modal-overlay" id="editQuestionModal">
   <div class="modal">
     <h3>質問を編集</h3>
-    <input type="hidden" id="editId">
-    <div class="form-group">
-      <label>質問文 *</label>
-      <input type="text" id="editQuestion">
-    </div>
+    <input type="hidden" id="editQId">
+    <div class="form-group"><label>質問文 *</label><input type="text" id="editQQuestion"></div>
     <div class="form-group">
       <label>回答形式 *</label>
-      <select id="editType" onchange="toggleEditOptionsField()">
-        <option value="テキスト">テキスト入力（自由記述）</option>
+      <select id="editQType" onchange="toggleOptionsField('editQOptions', 'editQType')">
+        <option value="テキスト">テキスト入力</option>
         <option value="プルダウン">プルダウン選択</option>
-        <option value="ラジオ">ラジオボタン（1つ選択）</option>
-        <option value="チェック">チェックボックス（複数選択）</option>
+        <option value="ラジオ">ラジオボタン</option>
+        <option value="チェック">チェックボックス</option>
       </select>
     </div>
-    <div class="form-group" id="editOptionsField">
+    <div class="form-group" id="editQOptionsWrap">
       <label>選択肢（カンマ区切り）</label>
-      <input type="text" id="editOptions">
-      <div class="options-hint">選択肢をカンマ（,）で区切って入力してください</div>
+      <input type="text" id="editQOptions">
     </div>
-    <div class="form-group">
-      <label>必須/任意</label>
-      <select id="editRequired">
-        <option value="任意">任意</option>
-        <option value="必須">必須</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>有効/無効</label>
-      <select id="editEnabled">
-        <option value="有効">有効（フォームに表示）</option>
-        <option value="無効">無効（フォームに非表示）</option>
-      </select>
-    </div>
+    <div class="form-group"><label>必須/任意</label><select id="editQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
+    <div class="form-group"><label>有効/無効</label><select id="editQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="saveEditQuestion()" style="flex:1;">保存する</button>
-      <button class="btn-secondary" onclick="closeEditModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveCommonQuestion()" style="flex:1;">保存</button>
+      <button class="btn-secondary" onclick="closeModal('editQuestionModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- メニュー編集モーダル -->
+<div class="modal-overlay" id="editMenuModal">
+  <div class="modal">
+    <h3>メニューを編集</h3>
+    <input type="hidden" id="editMenuId">
+    <div class="form-group"><label>メニュー名 *</label><input type="text" id="editMenuName"></div>
+    <div class="form-group"><label>説明（任意）</label><input type="text" id="editMenuDesc"></div>
+    <div class="form-group"><label>有効/無効</label><select id="editMenuEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveMenu()" style="flex:1;">保存</button>
+      <button class="btn-secondary" onclick="closeModal('editMenuModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- メニュー別質問追加モーダル -->
+<div class="modal-overlay" id="addMenuQuestionModal">
+  <div class="modal">
+    <h3 id="addMQTitle">質問を追加</h3>
+    <input type="hidden" id="addMQMenuId">
+    <div class="form-group"><label>質問文 *</label><input type="text" id="addMQQuestion" placeholder="例：お子様の年齢は？"></div>
+    <div class="form-group">
+      <label>回答形式 *</label>
+      <select id="addMQType" onchange="toggleOptionsField('addMQOptions', 'addMQType')">
+        <option value="テキスト">テキスト入力</option>
+        <option value="プルダウン">プルダウン選択</option>
+        <option value="ラジオ">ラジオボタン</option>
+        <option value="チェック">チェックボックス</option>
+      </select>
+    </div>
+    <div class="form-group" id="addMQOptionsWrap" style="display:none;">
+      <label>選択肢（カンマ区切り）*</label>
+      <input type="text" id="addMQOptions" placeholder="例：0歳,1歳,2歳,3歳以上">
+      <div class="options-hint">カンマ（,）で区切って入力してください</div>
+    </div>
+    <div class="form-group"><label>必須/任意</label><select id="addMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveMenuQuestion()" style="flex:1;">追加する</button>
+      <button class="btn-secondary" onclick="closeModal('addMenuQuestionModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- メニュー別質問編集モーダル -->
+<div class="modal-overlay" id="editMenuQuestionModal">
+  <div class="modal">
+    <h3>質問を編集</h3>
+    <input type="hidden" id="editMQId">
+    <div class="form-group"><label>質問文 *</label><input type="text" id="editMQQuestion"></div>
+    <div class="form-group">
+      <label>回答形式 *</label>
+      <select id="editMQType" onchange="toggleOptionsField('editMQOptions', 'editMQType')">
+        <option value="テキスト">テキスト入力</option>
+        <option value="プルダウン">プルダウン選択</option>
+        <option value="ラジオ">ラジオボタン</option>
+        <option value="チェック">チェックボックス</option>
+      </select>
+    </div>
+    <div class="form-group" id="editMQOptionsWrap">
+      <label>選択肢（カンマ区切り）</label>
+      <input type="text" id="editMQOptions">
+    </div>
+    <div class="form-group"><label>必須/任意</label><select id="editMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
+    <div class="form-group"><label>有効/無効</label><select id="editMQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveMenuQuestionEdit()" style="flex:1;">保存</button>
+      <button class="btn-secondary" onclick="closeModal('editMenuQuestionModal')">キャンセル</button>
     </div>
   </div>
 </div>
@@ -233,9 +315,7 @@
   const TIME_SLOTS = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 
   let adminYear, adminMonth;
-  let allReservations = [];
-  let allSchedule = [];
-  let allQuestions = [];
+  let allReservations = [], allSchedule = [], allMenus = [], allMenuQuestions = [], allCommonQuestions = [];
 
   function switchTab(name, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -244,11 +324,20 @@
     document.getElementById(`tab-${name}`).classList.add('active');
   }
 
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  function toggleOptionsField(optionsId, typeId) {
+    const type = document.getElementById(typeId).value;
+    const wrapId = optionsId + 'Wrap';
+    const wrap = document.getElementById(wrapId);
+    if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
+  }
+
   async function init() {
     const now = new Date();
     adminYear = now.getFullYear();
     adminMonth = now.getMonth() + 1;
-    await Promise.all([loadReservations(), loadScheduleData(), loadQuestions()]);
+    await Promise.all([loadReservations(), loadScheduleData(), loadMenus(), loadCommonQuestions()]);
     renderAdminCalendar();
     renderStats();
   }
@@ -264,8 +353,7 @@
         allReservations = json.data || [];
         renderReservations();
         if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-        resolve();
+        delete window[cb]; resolve();
       };
       s.src = `${GAS_URL}?action=getReservations&callback=${cb}`;
       document.body.appendChild(s);
@@ -274,71 +362,39 @@
 
   function renderReservations() {
     const list = document.getElementById('reservationList');
-    const pending = allReservations.filter(r => r.status === '仮押さえ');
-    const others = allReservations.filter(r => r.status !== '仮押さえ');
-    const sorted = [...pending, ...others];
-
-    if (sorted.length === 0) {
-      list.innerHTML = '<div class="empty">予約データがありません</div>';
-      return;
-    }
+    const sorted = [...allReservations.filter(r => r.status === '仮押さえ'), ...allReservations.filter(r => r.status !== '仮押さえ')];
+    if (sorted.length === 0) { list.innerHTML = '<div class="empty">予約データがありません</div>'; return; }
 
     list.innerHTML = sorted.map(r => {
-      const extras = r.extraAnswers && r.extraAnswers.length > 0
-        ? `<div class="extra-answers">${r.extraAnswers.map(a =>
-            `<div class="extra-answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`
-          ).join('')}</div>`
-        : '';
+      const menuBlock = r.menuAnswers && r.menuAnswers.length > 0
+        ? `<div class="answers-block">${r.menuAnswers.map(a => `<div class="answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`).join('')}</div>` : '';
+      const commonBlock = r.commonAnswers && r.commonAnswers.length > 0
+        ? `<div class="answers-block">${r.commonAnswers.map(a => `<div class="answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`).join('')}</div>` : '';
 
-      return `
-        <div class="card">
-          <div class="card-header">
-            <div class="card-name">${r.name}</div>
-            <div class="status-badge ${getStatusClass(r.status)}">${r.status}</div>
-          </div>
-          <div class="card-detail">📅 ${r.date}　🕐 ${r.timeSlot}〜</div>
-          <div class="card-detail">📞 ${r.phone || '-'}</div>
-          <div class="card-detail">🎯 ${r.purpose || '-'}　👥 ${r.count || '-'}</div>
-          ${r.note ? `<div class="card-detail">📝 ${r.note}</div>` : ''}
-          ${extras}
-          <div class="card-detail" style="color:#bbb;font-size:11px;">リクエスト：${r.requestedAt}</div>
-          ${r.status === '仮押さえ' ? `
-          <div class="card-actions">
-            <button class="btn-confirm" onclick="updateStatus('${r.id}', '確定')">✓ 確定</button>
-            <button class="btn-reject" onclick="updateStatus('${r.id}', '不可')">✗ 不可</button>
-          </div>` : ''}
-        </div>
-      `;
+      return `<div class="card">
+        <div class="card-header"><div class="card-name">${r.name}</div><div class="status-badge ${r.status === '仮押さえ' ? 'pending' : r.status === '確定' ? 'confirmed' : 'rejected'}">${r.status}</div></div>
+        <div class="card-detail">📅 ${r.date}　🕐 ${r.timeSlot}〜</div>
+        <div class="card-detail">📞 ${r.phone || '-'}</div>
+        <div class="card-detail">🎯 ${r.menu || '-'}　👥 ${r.count || '-'}</div>
+        ${menuBlock}${commonBlock}
+        ${r.note ? `<div class="card-detail">📝 ${r.note}</div>` : ''}
+        <div class="card-detail" style="color:#bbb;font-size:11px;">リクエスト：${r.requestedAt}</div>
+        ${r.status === '仮押さえ' ? `<div class="card-actions"><button class="btn-confirm" onclick="updateStatus('${r.id}','確定')">✓ 確定</button><button class="btn-reject" onclick="updateStatus('${r.id}','不可')">✗ 不可</button></div>` : ''}
+      </div>`;
     }).join('');
   }
 
-  function getStatusClass(status) {
-    if (status === '仮押さえ') return 'pending';
-    if (status === '確定') return 'confirmed';
-    return 'rejected';
-  }
-
   async function updateStatus(reservationId, status) {
-    const label = status === '確定' ? '確定' : '不可';
-    if (!confirm(`この予約を「${label}」にしますか？\nお客様にLINEで通知されます。`)) return;
-
+    if (!confirm(`「${status}」にしますか？お客様にLINEで通知されます。`)) return;
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'updateReservation', reservationId, status }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateReservation', reservationId, status }) });
       const json = await res.json();
       if (json.status === 'success') {
-        alert(`「${label}」に更新し、お客様に通知しました。`);
+        alert(`「${status}」に更新し通知しました。`);
         await Promise.all([loadReservations(), loadScheduleData()]);
-        renderAdminCalendar();
-        renderStats();
-      } else {
-        alert('エラーが発生しました。');
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+        renderAdminCalendar(); renderStats();
+      } else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
@@ -352,8 +408,7 @@
         allSchedule = json.data || [];
         renderScheduleList();
         if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-        resolve();
+        delete window[cb]; resolve();
       };
       s.src = `${GAS_URL}?action=getAllSchedule&callback=${cb}`;
       document.body.appendChild(s);
@@ -362,84 +417,51 @@
 
   function renderScheduleList() {
     const list = document.getElementById('scheduleList');
-    if (allSchedule.length === 0) {
-      list.innerHTML = '<div class="empty">営業日データがありません</div>';
-      return;
-    }
-
+    if (allSchedule.length === 0) { list.innerHTML = '<div class="empty">営業日データがありません</div>'; return; }
     list.innerHTML = allSchedule.map(s => `
       <div class="schedule-card">
         <div class="schedule-card-header">
           <div class="schedule-date">${s.date}</div>
-          <button class="btn-delete-date" onclick="deleteSchedule('${s.date}')">削除</button>
+          <button class="btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteSchedule('${s.date}')">削除</button>
         </div>
         <div class="slot-grid">
           ${TIME_SLOTS.map(t => {
             const status = s.slots[t] || '空き';
             const cls = status === '空き' ? 'available' : status === '仮押さえ' ? 'pending' : status === '確定' ? 'confirmed' : 'closed';
-            const clickable = (status === '空き' || status === '不可') ? `onclick="toggleSlot('${s.date}', '${t}', '${status}')"` : '';
+            const clickable = (status === '空き' || status === '不可') ? `onclick="toggleSlot('${s.date}','${t}','${status}')"` : '';
             return `<div class="slot-toggle ${cls}" ${clickable}>${t}<br><span style="font-size:9px;font-weight:400;">${status === '空き' ? '空き' : status === '不可' ? '不可' : status}</span></div>`;
           }).join('')}
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
   async function toggleSlot(date, timeSlot, currentStatus) {
     const newStatus = currentStatus === '空き' ? '不可' : '空き';
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'updateSlot', date, timeSlot, status: newStatus }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateSlot', date, timeSlot, status: newStatus }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        await loadScheduleData();
-        renderAdminCalendar();
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+      if (json.status === 'success') { await loadScheduleData(); renderAdminCalendar(); }
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   async function addSchedule() {
     const date = document.getElementById('scheduleDate').value;
     if (!date) { alert('日付を選択してください。'); return; }
-
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'addSchedule', date }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addSchedule', date }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        alert('営業日を追加しました。');
-        document.getElementById('scheduleDate').value = '';
-        await loadScheduleData();
-        renderAdminCalendar();
-      } else {
-        alert(json.message || 'エラーが発生しました。');
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+      if (json.status === 'success') { document.getElementById('scheduleDate').value = ''; await loadScheduleData(); renderAdminCalendar(); }
+      else alert(json.message || 'エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   async function deleteSchedule(date) {
-    if (!confirm(`${date} の営業日設定を削除しますか？`)) return;
+    if (!confirm(`${date} の営業日を削除しますか？`)) return;
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'deleteSchedule', date }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteSchedule', date }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        await loadScheduleData();
-        renderAdminCalendar();
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+      if (json.status === 'success') { await loadScheduleData(); renderAdminCalendar(); }
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
@@ -447,45 +469,32 @@
   // ==========================================
   function renderAdminCalendar() {
     const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-    document.getElementById('adminMonthLabel').textContent = `${adminYear}年 ${monthNames[adminMonth - 1]}`;
-
+    document.getElementById('adminMonthLabel').textContent = `${adminYear}年 ${monthNames[adminMonth-1]}`;
     const grid = document.getElementById('adminCalendarGrid');
     grid.innerHTML = '';
-
-    ['日','月','火','水','木','金','土'].forEach((d, i) => {
+    ['日','月','火','水','木','金','土'].forEach((d,i) => {
       const el = document.createElement('div');
-      el.className = `day-header ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}`;
-      el.textContent = d;
-      grid.appendChild(el);
+      el.className = `day-header ${i===0?'sun':i===6?'sat':''}`;
+      el.textContent = d; grid.appendChild(el);
     });
-
-    const firstDay = new Date(adminYear, adminMonth - 1, 1).getDay();
+    const firstDay = new Date(adminYear, adminMonth-1, 1).getDay();
     const daysInMonth = new Date(adminYear, adminMonth, 0).getDate();
-
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${adminYear}-${String(adminMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const s = allSchedule.find(x => x.date === dateStr);
-      const dow = new Date(adminYear, adminMonth - 1, d).getDay();
-
+      const dow = new Date(adminYear, adminMonth-1, d).getDay();
       const cell = document.createElement('div');
-      cell.className = `day-cell${dow === 0 ? ' sun' : dow === 6 ? ' sat' : ''}`;
-
+      cell.className = `day-cell${dow===0?' sun':dow===6?' sat':''}`;
       const numEl = document.createElement('div');
-      numEl.className = 'day-num';
-      numEl.textContent = d;
-      cell.appendChild(numEl);
-
+      numEl.className = 'day-num'; numEl.textContent = d; cell.appendChild(numEl);
       if (s) {
         const slots = Object.values(s.slots);
         const availCount = slots.filter(v => v === '空き').length;
         const tag = document.createElement('div');
-        tag.className = `slot-tag ${availCount === slots.length ? 'available' : availCount > 0 ? 'partial' : 'closed'}`;
-        tag.textContent = `${availCount}枠`;
-        cell.appendChild(tag);
+        tag.className = `slot-tag ${availCount===slots.length?'available':availCount>0?'partial':'closed'}`;
+        tag.textContent = `${availCount}枠`; cell.appendChild(tag);
       }
-
       grid.appendChild(cell);
     }
   }
@@ -498,155 +507,287 @@
   }
 
   // ==========================================
-  // 質問設定関連
+  // メニュー関連
   // ==========================================
-  function toggleOptionsField() {
-    const type = document.getElementById('qType').value;
-    document.getElementById('optionsField').style.display =
-      ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
-  }
-
-  function toggleEditOptionsField() {
-    const type = document.getElementById('editType').value;
-    document.getElementById('editOptionsField').style.display =
-      ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
-  }
-
-  function loadQuestions() {
+  function loadMenus() {
     return new Promise((resolve) => {
-      const cb = 'cb_q_' + Date.now();
+      const cb = 'cb_menu_' + Date.now();
       const s = document.createElement('script');
       window[cb] = (json) => {
-        allQuestions = json.data || [];
-        renderQuestions();
+        allMenus = json.data || [];
+        const cb2 = 'cb_mq_' + Date.now();
+        const s2 = document.createElement('script');
+        window[cb2] = (json2) => {
+          allMenuQuestions = json2.data || [];
+          renderMenuList();
+          if (document.body.contains(s2)) document.body.removeChild(s2);
+          delete window[cb2]; resolve();
+        };
+        s2.src = `${GAS_URL}?action=getAllMenuQuestions&callback=${cb2}`;
+        document.body.appendChild(s2);
         if (document.body.contains(s)) document.body.removeChild(s);
         delete window[cb];
-        resolve();
+      };
+      s.src = `${GAS_URL}?action=getAllMenus&callback=${cb}`;
+      document.body.appendChild(s);
+    });
+  }
+
+  function renderMenuList() {
+    const list = document.getElementById('menuList');
+    if (allMenus.length === 0) { list.innerHTML = '<div class="empty">メニューがありません</div>'; return; }
+
+    list.innerHTML = allMenus.map(m => {
+      const mqs = allMenuQuestions.filter(q => q.menuId === m.id);
+      const mqHtml = mqs.length > 0
+        ? mqs.map(q => `
+          <div class="question-card">
+            <div class="question-card-header">
+              <div class="question-title">${q.order}. ${q.question}</div>
+            </div>
+            <div class="question-meta">
+              <span class="badge type">${q.type}</span>
+              <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
+              <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
+              ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:#aaa;">選択肢：${q.options.join('、')}</span>` : ''}
+            </div>
+            <div class="question-actions">
+              <button class="btn-small" onclick="openEditMenuQuestion('${q.id}')">編集</button>
+              <button class="btn-small" style="color:#e57373;border-color:#e57373;" onclick="deleteMenuQuestion('${q.id}')">削除</button>
+            </div>
+          </div>`).join('')
+        : '<div style="font-size:12px;color:#bbb;padding:8px 0;">質問がありません</div>';
+
+      return `<div class="menu-card">
+        <div class="menu-card-header">
+          <div class="menu-name">${m.name}</div>
+          <span class="badge ${m.enabled === '有効' ? 'enabled' : 'disabled'}">${m.enabled}</span>
+        </div>
+        ${m.description ? `<div class="menu-desc">${m.description}</div>` : ''}
+        <div class="menu-actions">
+          <button class="btn-secondary" onclick="openEditMenu('${m.id}')">メニュー編集</button>
+          <button class="btn-secondary" onclick="openAddMenuQuestion('${m.id}','${m.name}')">＋ 質問追加</button>
+          <button class="btn-danger" onclick="deleteMenu('${m.id}')">削除</button>
+        </div>
+        <div class="menu-questions-section">
+          <div class="menu-questions-title">このメニューの質問</div>
+          ${mqHtml}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function addMenu() {
+    const name = document.getElementById('menuName').value.trim();
+    const description = document.getElementById('menuDesc').value.trim();
+    if (!name) { alert('メニュー名を入力してください。'); return; }
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addMenu', name, description }) });
+      const json = await res.json();
+      if (json.status === 'success') {
+        document.getElementById('menuName').value = '';
+        document.getElementById('menuDesc').value = '';
+        await loadMenus();
+      } else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  function openEditMenu(id) {
+    const m = allMenus.find(x => x.id === id);
+    if (!m) return;
+    document.getElementById('editMenuId').value = m.id;
+    document.getElementById('editMenuName').value = m.name;
+    document.getElementById('editMenuDesc').value = m.description || '';
+    document.getElementById('editMenuEnabled').value = m.enabled;
+    document.getElementById('editMenuModal').classList.add('active');
+  }
+
+  async function saveMenu() {
+    const id = document.getElementById('editMenuId').value;
+    const name = document.getElementById('editMenuName').value.trim();
+    const description = document.getElementById('editMenuDesc').value.trim();
+    const enabled = document.getElementById('editMenuEnabled').value;
+    if (!name) { alert('メニュー名を入力してください。'); return; }
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateMenu', id, name, description, enabled }) });
+      const json = await res.json();
+      if (json.status === 'success') { closeModal('editMenuModal'); await loadMenus(); }
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  async function deleteMenu(id) {
+    if (!confirm('このメニューを削除しますか？\nメニュー別の質問も削除されません（別途削除してください）。')) return;
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteMenu', id }) });
+      const json = await res.json();
+      if (json.status === 'success') await loadMenus();
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  function openAddMenuQuestion(menuId, menuName) {
+    document.getElementById('addMQMenuId').value = menuId;
+    document.getElementById('addMQTitle').textContent = `「${menuName}」の質問を追加`;
+    document.getElementById('addMQQuestion').value = '';
+    document.getElementById('addMQOptions').value = '';
+    document.getElementById('addMQType').value = 'テキスト';
+    document.getElementById('addMQRequired').value = '任意';
+    document.getElementById('addMQOptionsWrap').style.display = 'none';
+    document.getElementById('addMenuQuestionModal').classList.add('active');
+  }
+
+  async function saveMenuQuestion() {
+    const menuId = document.getElementById('addMQMenuId').value;
+    const question = document.getElementById('addMQQuestion').value.trim();
+    const type = document.getElementById('addMQType').value;
+    const options = document.getElementById('addMQOptions').value.trim();
+    const required = document.getElementById('addMQRequired').value;
+    if (!question) { alert('質問文を入力してください。'); return; }
+    if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addMenuQuestion', menuId, question, type, options, required }) });
+      const json = await res.json();
+      if (json.status === 'success') { closeModal('addMenuQuestionModal'); await loadMenus(); }
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  function openEditMenuQuestion(id) {
+    const q = allMenuQuestions.find(x => x.id === id);
+    if (!q) return;
+    document.getElementById('editMQId').value = q.id;
+    document.getElementById('editMQQuestion').value = q.question;
+    document.getElementById('editMQType').value = q.type;
+    document.getElementById('editMQOptions').value = q.options ? q.options.join(',') : '';
+    document.getElementById('editMQRequired').value = q.required;
+    document.getElementById('editMQEnabled').value = q.enabled;
+    const wrap = document.getElementById('editMQOptionsWrap');
+    if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(q.type) ? 'block' : 'none';
+    document.getElementById('editMenuQuestionModal').classList.add('active');
+  }
+
+  async function saveMenuQuestionEdit() {
+    const id = document.getElementById('editMQId').value;
+    const question = document.getElementById('editMQQuestion').value.trim();
+    const type = document.getElementById('editMQType').value;
+    const options = document.getElementById('editMQOptions').value.trim();
+    const required = document.getElementById('editMQRequired').value;
+    const enabled = document.getElementById('editMQEnabled').value;
+    if (!question) { alert('質問文を入力してください。'); return; }
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateMenuQuestion', id, question, type, options, required, enabled }) });
+      const json = await res.json();
+      if (json.status === 'success') { closeModal('editMenuQuestionModal'); await loadMenus(); }
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  async function deleteMenuQuestion(id) {
+    if (!confirm('この質問を削除しますか？')) return;
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteMenuQuestion', id }) });
+      const json = await res.json();
+      if (json.status === 'success') await loadMenus();
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  // ==========================================
+  // 共通質問関連
+  // ==========================================
+  function loadCommonQuestions() {
+    return new Promise((resolve) => {
+      const cb = 'cb_cq_' + Date.now();
+      const s = document.createElement('script');
+      window[cb] = (json) => {
+        allCommonQuestions = json.data || [];
+        renderCommonQuestions();
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb]; resolve();
       };
       s.src = `${GAS_URL}?action=getAllFormQuestions&callback=${cb}`;
       document.body.appendChild(s);
     });
   }
 
-  function renderQuestions() {
+  function renderCommonQuestions() {
     const list = document.getElementById('questionList');
-    if (allQuestions.length === 0) {
-      list.innerHTML = '<div class="empty">質問がありません。上のフォームから追加してください。</div>';
-      return;
-    }
-
-    const typeLabels = { 'テキスト': '自由記述', 'プルダウン': 'プルダウン', 'ラジオ': 'ラジオ', 'チェック': 'チェック' };
-
-    list.innerHTML = allQuestions.map(q => `
-      <div class="question-card">
+    if (allCommonQuestions.length === 0) { list.innerHTML = '<div class="empty">共通質問がありません</div>'; return; }
+    list.innerHTML = allCommonQuestions.map(q => `
+      <div class="question-card" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
         <div class="question-card-header">
           <div class="question-title">${q.order}. ${q.question}</div>
         </div>
         <div class="question-meta">
-          <span class="badge type-badge">${typeLabels[q.type] || q.type}</span>
+          <span class="badge type">${q.type}</span>
           <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
           <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
-          ${q.options && q.options.length > 0 ? `<span style="font-size:11px;color:#aaa;">選択肢：${q.options.join('、')}</span>` : ''}
+          ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:#aaa;">選択肢：${q.options.join('、')}</span>` : ''}
         </div>
         <div class="question-actions">
-          <button class="btn-secondary" onclick="openEditModal('${q.id}')">編集</button>
-          <button class="btn-danger" onclick="deleteQuestion('${q.id}')">削除</button>
+          <button class="btn-secondary" onclick="openEditCommonQuestion('${q.id}')">編集</button>
+          <button class="btn-danger" onclick="deleteCommonQuestion('${q.id}')">削除</button>
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  async function addQuestion() {
+  async function addCommonQuestion() {
     const question = document.getElementById('qQuestion').value.trim();
     const type = document.getElementById('qType').value;
     const options = document.getElementById('qOptions').value.trim();
     const required = document.getElementById('qRequired').value;
-
     if (!question) { alert('質問文を入力してください。'); return; }
-    if (['プルダウン','ラジオ','チェック'].includes(type) && !options) {
-      alert('選択肢を入力してください。'); return;
-    }
-
+    if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'addFormQuestion', question, type, options, required }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addFormQuestion', question, type, options, required }) });
       const json = await res.json();
       if (json.status === 'success') {
         document.getElementById('qQuestion').value = '';
         document.getElementById('qOptions').value = '';
-        document.getElementById('qRequired').value = '任意';
-        document.getElementById('qType').value = 'テキスト';
-        toggleOptionsField();
-        await loadQuestions();
-      } else {
-        alert('エラーが発生しました。');
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+        await loadCommonQuestions();
+      } else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
-  function openEditModal(id) {
-    const q = allQuestions.find(x => x.id === id);
+  function openEditCommonQuestion(id) {
+    const q = allCommonQuestions.find(x => x.id === id);
     if (!q) return;
-
-    document.getElementById('editId').value = q.id;
-    document.getElementById('editQuestion').value = q.question;
-    document.getElementById('editType').value = q.type;
-    document.getElementById('editOptions').value = q.options ? q.options.join(',') : '';
-    document.getElementById('editRequired').value = q.required;
-    document.getElementById('editEnabled').value = q.enabled;
-    toggleEditOptionsField();
-    document.getElementById('editModal').classList.add('active');
+    document.getElementById('editQId').value = q.id;
+    document.getElementById('editQQuestion').value = q.question;
+    document.getElementById('editQType').value = q.type;
+    document.getElementById('editQOptions').value = q.options ? q.options.join(',') : '';
+    document.getElementById('editQRequired').value = q.required;
+    document.getElementById('editQEnabled').value = q.enabled;
+    const wrap = document.getElementById('editQOptionsWrap');
+    if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(q.type) ? 'block' : 'none';
+    document.getElementById('editQuestionModal').classList.add('active');
   }
 
-  function closeEditModal() {
-    document.getElementById('editModal').classList.remove('active');
-  }
-
-  async function saveEditQuestion() {
-    const id = document.getElementById('editId').value;
-    const question = document.getElementById('editQuestion').value.trim();
-    const type = document.getElementById('editType').value;
-    const options = document.getElementById('editOptions').value.trim();
-    const required = document.getElementById('editRequired').value;
-    const enabled = document.getElementById('editEnabled').value;
-
+  async function saveCommonQuestion() {
+    const id = document.getElementById('editQId').value;
+    const question = document.getElementById('editQQuestion').value.trim();
+    const type = document.getElementById('editQType').value;
+    const options = document.getElementById('editQOptions').value.trim();
+    const required = document.getElementById('editQRequired').value;
+    const enabled = document.getElementById('editQEnabled').value;
     if (!question) { alert('質問文を入力してください。'); return; }
-
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'updateFormQuestion', id, question, type, options, required, enabled }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateFormQuestion', id, question, type, options, required, enabled }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        closeEditModal();
-        await loadQuestions();
-      } else {
-        alert('エラーが発生しました。');
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+      if (json.status === 'success') { closeModal('editQuestionModal'); await loadCommonQuestions(); }
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
-  async function deleteQuestion(id) {
-    if (!confirm('この質問を削除しますか？')) return;
+  async function deleteCommonQuestion(id) {
+    if (!confirm('この共通質問を削除しますか？')) return;
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'deleteFormQuestion', id }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFormQuestion', id }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        await loadQuestions();
-      }
-    } catch (e) {
-      alert('通信エラーが発生しました。');
-    }
+      if (json.status === 'success') await loadCommonQuestions();
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
@@ -657,29 +798,21 @@
     const confirmed = allReservations.filter(r => r.status === '確定').length;
     const pending = allReservations.filter(r => r.status === '仮押さえ').length;
     const rejected = allReservations.filter(r => r.status === '不可').length;
-
     document.getElementById('statsGrid').innerHTML = `
       <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">総リクエスト数</div></div>
       <div class="stat-card"><div class="stat-number" style="color:#388e3c;">${confirmed}</div><div class="stat-label">確定数</div></div>
       <div class="stat-card"><div class="stat-number" style="color:#f57c00;">${pending}</div><div class="stat-label">仮押さえ中</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:#c62828;">${rejected}</div><div class="stat-label">不可数</div></div>
-    `;
-
+      <div class="stat-card"><div class="stat-number" style="color:#c62828;">${rejected}</div><div class="stat-label">不可数</div></div>`;
     const timeCounts = {};
     TIME_SLOTS.forEach(t => { timeCounts[t] = 0; });
-    allReservations.filter(r => r.status === '確定').forEach(r => {
-      if (timeCounts[r.timeSlot] !== undefined) timeCounts[r.timeSlot]++;
-    });
-
+    allReservations.filter(r => r.status === '確定').forEach(r => { if (timeCounts[r.timeSlot] !== undefined) timeCounts[r.timeSlot]++; });
     const max = Math.max(...Object.values(timeCounts), 1);
     document.getElementById('timeChart').innerHTML = TIME_SLOTS.map(t => `
       <div class="bar-row">
         <div class="bar-label">${t}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${(timeCounts[t]/max)*100}%"></div></div>
         <div class="bar-value">${timeCounts[t]}</div>
-      </div>
-    `).join('');
-
+      </div>`).join('');
     document.getElementById('chartContainer').style.display = 'block';
   }
 
