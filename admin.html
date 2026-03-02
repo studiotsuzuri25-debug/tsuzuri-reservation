@@ -4,109 +4,672 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>studio TSUZURI 管理画面</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #f4f6f8;
+      --surface: #ffffff;
+      --surface-2: #f8fafb;
+      --border: #e8edf0;
+      --border-dark: #d0dbe0;
+      --primary: #68c0d3;
+      --primary-dark: #4a9db0;
+      --primary-light: #daf0f5;
+      --primary-xlight: #eef8fb;
+      --text-dark: #1e2d35;
+      --text-mid: #4a6070;
+      --text-light: #8aa0ae;
+      --error: #d05a5a;
+      --error-bg: #fff0f0;
+      --pending-color: #c08830;
+      --pending-bg: #fffbf0;
+      --confirmed-color: #3a9a7a;
+      --confirmed-bg: #f0faf6;
+      --rejected-color: #c05858;
+      --rejected-bg: #fff0f0;
+      --shadow-sm: 0 1px 4px rgba(60,100,120,0.07);
+      --shadow-md: 0 4px 16px rgba(60,100,120,0.10);
+      --shadow-lg: 0 8px 32px rgba(60,100,120,0.14);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; color: #333; }
-    header { background: #333; padding: 16px; text-align: center; }
-    header h1 { font-size: 16px; font-weight: 600; letter-spacing: 2px; color: #fff; }
-    header p { font-size: 11px; color: #aaa; margin-top: 4px; }
-    .tab-bar { display: flex; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; }
-    .tab { flex-shrink: 0; padding: 12px 14px; text-align: center; font-size: 12px; cursor: pointer; color: #999; border-bottom: 2px solid transparent; white-space: nowrap; }
-    .tab.active { color: #333; border-bottom: 2px solid #333; font-weight: 600; }
-    .tab-content { display: none; padding: 16px; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+
+    /* ヘッダー */
+    header {
+      background: var(--surface);
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .header-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 3px;
+      color: var(--primary-dark);
+    }
+    .header-sub {
+      font-size: 10px;
+      color: var(--text-light);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .header-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #68c0d3;
+    }
+    .header-status {
+      font-size: 10px;
+      color: var(--text-light);
+      letter-spacing: 1px;
+    }
+
+    /* タブバー */
+    .tab-bar {
+      background: var(--surface);
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0;
+      padding: 14px 18px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+    .tab:hover { color: var(--text-mid); }
+    .tab.active {
+      color: #2a8fa3;
+      border-bottom: 2px solid #68c0d3;
+    }
+
+    /* タブコンテンツ */
+    .tab-content { display: none; padding: 20px 16px 40px; }
     .tab-content.active { display: block; }
-    .section-title { font-size: 13px; font-weight: 600; color: #777; margin-bottom: 12px; letter-spacing: 1px; }
-    .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .card-name { font-size: 16px; font-weight: 600; }
-    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .status-badge.pending { background: #fff3e0; color: #f57c00; }
-    .status-badge.confirmed { background: #e8f5e9; color: #388e3c; }
-    .status-badge.rejected { background: #fce4ec; color: #c62828; }
-    .card-detail { font-size: 13px; color: #666; margin-bottom: 4px; }
-    .card-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-confirm { flex: 1; padding: 10px; background: #388e3c; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
-    .btn-reject { flex: 1; padding: 10px; background: #fff; color: #c62828; border: 1px solid #c62828; border-radius: 8px; font-size: 14px; cursor: pointer; }
-    .answers-block { margin-top: 8px; padding: 8px 12px; background: #f9f9f9; border-radius: 8px; }
-    .answer-item { font-size: 12px; color: #666; margin-bottom: 3px; }
-    .answer-item strong { color: #555; }
-    .calendar { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px; }
-    .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .calendar-nav button { background: none; border: 1px solid #ddd; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-    .day-header { font-size: 11px; color: #999; padding: 4px 0; }
-    .day-header.sun { color: #e57373; }
-    .day-header.sat { color: #64b5f6; }
-    .day-cell { padding: 4px 2px; border-radius: 6px; font-size: 12px; min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .day-cell.sun .day-num { color: #e57373; }
-    .day-cell.sat .day-num { color: #64b5f6; }
-    .day-num { font-size: 12px; }
-    .slot-tag { font-size: 9px; padding: 1px 4px; border-radius: 3px; width: 100%; text-align: center; }
-    .slot-tag.available { background: #e8f5e9; color: #388e3c; }
-    .slot-tag.partial { background: #fff3e0; color: #f57c00; }
-    .slot-tag.closed { background: #f5f5f5; color: #bbb; }
-    .schedule-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .schedule-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .schedule-date { font-size: 15px; font-weight: 600; }
-    .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .slot-toggle { padding: 8px 4px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; border: 1px solid #eee; font-weight: 600; }
-    .slot-toggle.available { background: #e8f5e9; color: #388e3c; border-color: #c8e6c9; }
-    .slot-toggle.closed { background: #f5f5f5; color: #bbb; border-color: #eee; }
-    .slot-toggle.pending { background: #fff3e0; color: #f57c00; border-color: #ffe0b2; cursor: not-allowed; }
-    .slot-toggle.confirmed { background: #e3f2fd; color: #1565c0; border-color: #bbdefb; cursor: not-allowed; }
-    .add-form { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
+    /* セクションタイトル */
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: var(--text-dark);
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 11px;
+      color: var(--text-light);
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      margin-top: -10px;
+    }
+
+    /* カード */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: var(--shadow-md); }
+
+    /* 予約カード */
+    .res-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+      border-left: 3px solid var(--border-dark);
+    }
+    .res-card.pending { border-left-color: var(--primary); }
+    .res-card.confirmed { border-left-color: var(--primary); }
+    .res-card.rejected { border-left-color: var(--terracotta); opacity: 0.7; }
+
+    .res-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .res-name {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-dark);
+      letter-spacing: 0.5px;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    .status-badge.pending { background: var(--pending-bg); color: var(--pending-color); }
+    .status-badge.confirmed { background: var(--confirmed-bg); color: var(--confirmed-color); }
+    .status-badge.rejected { background: var(--rejected-bg); color: var(--rejected-color); }
+
+    .res-details { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .res-detail {
+      font-size: 13px;
+      color: var(--text-mid);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .res-detail-icon { font-size: 12px; opacity: 0.7; }
+
+    .answers-block {
+      background: var(--primary-xlight);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border-left: 2px solid var(--primary-light);
+    }
+    .answer-item {
+      font-size: 12px;
+      color: var(--text-mid);
+      margin-bottom: 3px;
+      line-height: 1.6;
+    }
+    .answer-item strong { color: var(--text-dark); font-weight: 500; }
+
+    .res-meta {
+      font-size: 10px;
+      color: var(--text-light);
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .res-actions { display: flex; gap: 8px; }
+    .btn-confirm {
+      flex: 1;
+      padding: 11px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: background 0.2s;
+    }
+    .btn-confirm:hover { background: var(--primary-dark); }
+    .btn-reject {
+      flex: 1;
+      padding: 11px;
+      background: var(--surface);
+      color: var(--terracotta);
+      border: 1px solid var(--terracotta);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-reject:hover { background: var(--error-bg); }
+
+    /* フォーム */
+    .add-form {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+    }
     .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 12px; color: #777; margin-bottom: 6px; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fafafa; }
-    .btn-primary { width: 100%; padding: 12px; background: #333; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
-    .btn-secondary { padding: 6px 12px; background: none; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; color: #666; cursor: pointer; }
-    .btn-danger { padding: 6px 12px; background: none; border: 1px solid #e57373; border-radius: 6px; font-size: 12px; color: #e57373; cursor: pointer; }
-    .btn-small { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #555; }
-    .menu-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .menu-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .menu-name { font-size: 15px; font-weight: 600; }
-    .menu-desc { font-size: 12px; color: #999; margin-bottom: 10px; }
-    .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .question-card { background: #f9f9f9; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-light);
+      margin-bottom: 6px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text-dark);
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #68c0d3;
+      background: var(--surface);
+    }
+    .options-hint {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ボタン */
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: #68c0d3;
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { background: #4a9db0; }
+    .btn-secondary {
+      padding: 7px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--text-mid);
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary-dark); }
+    .btn-danger {
+      padding: 7px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--text-light);
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-danger:hover { border-color: var(--terracotta); color: var(--terracotta); }
+    .btn-small {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-mid);
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-small:hover { border-color: var(--primary); }
+    .btn-small.danger { color: var(--terracotta); }
+    .btn-small.danger:hover { border-color: var(--terracotta); }
+
+    /* カレンダー */
+    .calendar-wrap {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+      margin-bottom: 16px;
+    }
+    .calendar-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .calendar-nav button {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 14px;
+      cursor: pointer;
+      color: var(--text-mid);
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .calendar-nav button:hover { border-color: var(--primary); color: var(--primary-dark); }
+    .calendar-month {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: var(--text-dark);
+    }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+    .day-header { font-size: 10px; color: var(--text-light); padding: 4px 0; letter-spacing: 1px; }
+    .day-header.sun { color: var(--terracotta); }
+    .day-header.sat { color: var(--primary); }
+    .day-cell {
+      padding: 5px 2px;
+      border-radius: 7px;
+      font-size: 12px;
+      min-height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 2px;
+    }
+    .day-cell.sun .day-num { color: var(--terracotta); }
+    .day-cell.sat .day-num { color: var(--primary); }
+    .day-num { font-size: 12px; font-weight: 400; color: var(--text-dark); }
+    .slot-tag {
+      font-size: 9px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      width: 100%;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .slot-tag.available { background: var(--confirmed-bg); color: var(--confirmed-color); }
+    .slot-tag.partial { background: var(--pending-bg); color: var(--pending-color); }
+    .slot-tag.closed { background: var(--surface-2); color: var(--text-light); }
+
+    /* 営業日カード */
+    .schedule-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+    }
+    .schedule-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .schedule-date {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      color: var(--text-dark);
+    }
+    .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .slot-toggle {
+      padding: 9px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      font-weight: 500;
+      transition: all 0.15s;
+      line-height: 1.4;
+    }
+    .slot-toggle.available {
+      background: var(--primary-xlight);
+      color: var(--primary-dark);
+      border-color: var(--primary-light);
+    }
+    .slot-toggle.available:hover {
+      background: var(--primary-light);
+    }
+    .slot-toggle.closed {
+      background: var(--surface-2);
+      color: var(--text-light);
+      border-color: var(--border);
+    }
+    .slot-toggle.closed:hover {
+      background: var(--border);
+    }
+    .slot-toggle.pending {
+      background: var(--pending-bg);
+      color: var(--pending-color);
+      border-color: #f0dcc0;
+      cursor: not-allowed;
+    }
+    .slot-toggle.confirmed {
+      background: #e8f0fb;
+      color: #5570a0;
+      border-color: #c8d8f0;
+      cursor: not-allowed;
+    }
+
+    /* メニューカード */
+    .menu-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+    }
+    .menu-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .menu-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-dark);
+      letter-spacing: 0.5px;
+    }
+    .menu-desc {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .menu-questions-section {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+    .menu-questions-title {
+      font-size: 10px;
+      color: var(--text-light);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    /* 質問カード */
+    .question-card {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
     .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .question-title { font-size: 13px; font-weight: 600; flex: 1; margin-right: 8px; }
-    .question-meta { font-size: 11px; color: #999; margin: 4px 0 6px; }
-    .question-actions { display: flex; gap: 6px; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
-    .badge.required { background: #fce4ec; color: #c62828; }
-    .badge.optional { background: #f5f5f5; color: #999; }
-    .badge.enabled { background: #e8f5e9; color: #388e3c; }
-    .badge.disabled { background: #f5f5f5; color: #bbb; }
-    .badge.type { background: #e3f2fd; color: #1565c0; }
-    .menu-questions-section { margin-top: 12px; border-top: 1px solid #eee; padding-top: 12px; }
-    .menu-questions-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-    .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .stat-number { font-size: 28px; font-weight: 700; color: #333; }
-    .stat-label { font-size: 11px; color: #999; margin-top: 4px; }
-    .chart-bar-container { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .chart-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 12px; }
-    .bar-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
-    .bar-label { width: 40px; font-size: 11px; color: #777; text-align: right; }
-    .bar-track { flex: 1; background: #f0f0f0; border-radius: 4px; height: 20px; overflow: hidden; }
-    .bar-fill { height: 100%; background: #81c784; border-radius: 4px; }
-    .bar-value { width: 24px; font-size: 11px; color: #555; }
-    .loading { text-align: center; padding: 40px; color: #999; font-size: 13px; }
-    .empty { text-align: center; padding: 40px; color: #bbb; font-size: 13px; }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+    .question-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dark);
+      flex: 1;
+      margin-right: 8px;
+      line-height: 1.5;
+    }
+    .question-meta { font-size: 11px; color: var(--text-light); margin: 5px 0 7px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .question-actions { display: flex; gap: 5px; }
+
+    /* バッジ */
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .badge.required { background: var(--rejected-bg); color: var(--rejected-color); }
+    .badge.optional { background: var(--surface-2); color: var(--text-light); }
+    .badge.enabled { background: var(--confirmed-bg); color: var(--confirmed-color); }
+    .badge.disabled { background: var(--surface-2); color: var(--text-light); }
+    .badge.type { background: var(--primary-xlight); color: var(--primary-dark); }
+
+    /* 統計 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 18px 14px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+    }
+    .stat-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 300;
+      color: var(--text-dark);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-light);
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+    .chart-wrap {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+    }
+    .chart-title {
+      font-size: 11px;
+      color: var(--text-light);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      font-weight: 500;
+    }
+    .bar-row { display: flex; align-items: center; margin-bottom: 7px; gap: 8px; }
+    .bar-label { width: 38px; font-size: 10px; color: var(--text-light); text-align: right; }
+    .bar-track { flex: 1; background: var(--surface-2); border-radius: 3px; height: 16px; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, #68c0d3, #4a9db0); border-radius: 3px; transition: width 0.6s ease; }
+    .bar-value { width: 20px; font-size: 10px; color: var(--text-mid); }
+
+    /* ローディング・空 */
+    .loading { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 13px; letter-spacing: 1px; }
+    .loading-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
+    .loading-dot { width: 6px; height: 6px; border-radius: 50%; background: #68c0d3; animation: pulse 1.2s ease-in-out infinite; }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse { 0%,80%,100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+    .empty { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 13px; letter-spacing: 1px; }
+
+    /* モーダル */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(30,45,53,0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      backdrop-filter: blur(2px);
+    }
     .modal-overlay.active { display: flex; }
-    .modal { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
-    .options-hint { font-size: 11px; color: #aaa; margin-top: 4px; }
-    .expand-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; padding: 4px 0; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: var(--text-dark);
+      margin-bottom: 20px;
+    }
+    .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+    /* ディバイダー */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--surface-2);
+      margin: 16px 0;
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>studio TSUZURI</h1>
-  <p>管理画面</p>
+  <div class="header-inner">
+    <div>
+      <div class="header-logo">studio TSUZURI</div>
+      <div class="header-sub">管理画面</div>
+    </div>
+    <div class="header-right">
+      <div class="header-dot"></div>
+      <div class="header-status">Admin</div>
+    </div>
+  </div>
 </header>
 
 <div class="tab-bar">
@@ -120,16 +683,16 @@
 
 <!-- 予約一覧 -->
 <div class="tab-content active" id="tab-reservations">
-  <div class="section-title">予約リクエスト一覧</div>
-  <div id="reservationList"><div class="loading">読み込み中...</div></div>
+  <div class="section-title">予約一覧</div>
+  <div id="reservationList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
 
 <!-- カレンダー -->
 <div class="tab-content" id="tab-calendar">
-  <div class="calendar">
+  <div class="calendar-wrap">
     <div class="calendar-nav">
       <button onclick="adminChangeMonth(-1)">&#8249;</button>
-      <span id="adminMonthLabel" style="font-size:15px;font-weight:600;"></span>
+      <span class="calendar-month" id="adminMonthLabel"></span>
       <button onclick="adminChangeMonth(1)">&#8250;</button>
     </div>
     <div class="calendar-grid" id="adminCalendarGrid"></div>
@@ -146,7 +709,7 @@
     </div>
     <button class="btn-primary" onclick="addSchedule()">追加する（全枠空きで登録）</button>
   </div>
-  <div id="scheduleList"><div class="loading">読み込み中...</div></div>
+  <div id="scheduleList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
 
 <!-- メニュー設定 -->
@@ -154,7 +717,7 @@
   <div class="add-form">
     <div class="section-title">メニューを追加</div>
     <div class="form-group">
-      <label>メニュー名 *</label>
+      <label>メニュー名</label>
       <input type="text" id="menuName" placeholder="例：お宮参り">
     </div>
     <div class="form-group">
@@ -164,19 +727,20 @@
     <button class="btn-primary" onclick="addMenu()">メニューを追加する</button>
   </div>
   <div class="section-title">メニュー一覧</div>
-  <div id="menuList"><div class="loading">読み込み中...</div></div>
+  <div id="menuList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
 
 <!-- 共通質問 -->
 <div class="tab-content" id="tab-questions">
   <div class="add-form">
-    <div class="section-title">共通質問を追加（全メニュー共通）</div>
+    <div class="section-title">共通質問を追加</div>
+    <div class="section-sub">全メニュー共通で表示される質問です</div>
     <div class="form-group">
-      <label>質問文 *</label>
+      <label>質問文</label>
       <input type="text" id="qQuestion" placeholder="例：ご要望があればお書きください">
     </div>
     <div class="form-group">
-      <label>回答形式 *</label>
+      <label>回答形式</label>
       <select id="qType" onchange="toggleOptionsField('qOptions', 'qType')">
         <option value="テキスト">テキスト入力（自由記述）</option>
         <option value="プルダウン">プルダウン選択</option>
@@ -185,12 +749,12 @@
       </select>
     </div>
     <div class="form-group" id="qOptionsWrap" style="display:none;">
-      <label>選択肢（カンマ区切り）*</label>
+      <label>選択肢（カンマ区切り）</label>
       <input type="text" id="qOptions" placeholder="例：希望する,不要">
       <div class="options-hint">カンマ（,）で区切って入力してください</div>
     </div>
     <div class="form-group">
-      <label>必須/任意</label>
+      <label>必須 / 任意</label>
       <select id="qRequired">
         <option value="任意">任意</option>
         <option value="必須">必須</option>
@@ -199,26 +763,27 @@
     <button class="btn-primary" onclick="addCommonQuestion()">共通質問を追加する</button>
   </div>
   <div class="section-title">共通質問一覧</div>
-  <div id="questionList"><div class="loading">読み込み中...</div></div>
+  <div id="questionList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
 
 <!-- 分析 -->
 <div class="tab-content" id="tab-stats">
-  <div class="stats-grid" id="statsGrid"><div class="loading">読み込み中...</div></div>
-  <div class="chart-bar-container" id="chartContainer" style="display:none;">
+  <div class="section-title">分析</div>
+  <div class="stats-grid" id="statsGrid"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
+  <div class="chart-wrap" id="chartContainer" style="display:none;">
     <div class="chart-title">時間帯別 確定数</div>
     <div id="timeChart"></div>
   </div>
 </div>
 
-<!-- 編集モーダル（共通質問） -->
+<!-- 共通質問編集モーダル -->
 <div class="modal-overlay" id="editQuestionModal">
   <div class="modal">
-    <h3>質問を編集</h3>
+    <div class="modal-title">質問を編集</div>
     <input type="hidden" id="editQId">
-    <div class="form-group"><label>質問文 *</label><input type="text" id="editQQuestion"></div>
+    <div class="form-group"><label>質問文</label><input type="text" id="editQQuestion"></div>
     <div class="form-group">
-      <label>回答形式 *</label>
+      <label>回答形式</label>
       <select id="editQType" onchange="toggleOptionsField('editQOptions', 'editQType')">
         <option value="テキスト">テキスト入力</option>
         <option value="プルダウン">プルダウン選択</option>
@@ -230,10 +795,10 @@
       <label>選択肢（カンマ区切り）</label>
       <input type="text" id="editQOptions">
     </div>
-    <div class="form-group"><label>必須/任意</label><select id="editQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
-    <div class="form-group"><label>有効/無効</label><select id="editQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
+    <div class="form-group"><label>必須 / 任意</label><select id="editQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
+    <div class="form-group"><label>表示状態</label><select id="editQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="saveCommonQuestion()" style="flex:1;">保存</button>
+      <button class="btn-primary" onclick="saveCommonQuestion()" style="flex:1;">保存する</button>
       <button class="btn-secondary" onclick="closeModal('editQuestionModal')">キャンセル</button>
     </div>
   </div>
@@ -242,13 +807,13 @@
 <!-- メニュー編集モーダル -->
 <div class="modal-overlay" id="editMenuModal">
   <div class="modal">
-    <h3>メニューを編集</h3>
+    <div class="modal-title">メニューを編集</div>
     <input type="hidden" id="editMenuId">
-    <div class="form-group"><label>メニュー名 *</label><input type="text" id="editMenuName"></div>
+    <div class="form-group"><label>メニュー名</label><input type="text" id="editMenuName"></div>
     <div class="form-group"><label>説明（任意）</label><input type="text" id="editMenuDesc"></div>
-    <div class="form-group"><label>有効/無効</label><select id="editMenuEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
+    <div class="form-group"><label>表示状態</label><select id="editMenuEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="saveMenu()" style="flex:1;">保存</button>
+      <button class="btn-primary" onclick="saveMenu()" style="flex:1;">保存する</button>
       <button class="btn-secondary" onclick="closeModal('editMenuModal')">キャンセル</button>
     </div>
   </div>
@@ -257,11 +822,11 @@
 <!-- メニュー別質問追加モーダル -->
 <div class="modal-overlay" id="addMenuQuestionModal">
   <div class="modal">
-    <h3 id="addMQTitle">質問を追加</h3>
+    <div class="modal-title" id="addMQTitle">質問を追加</div>
     <input type="hidden" id="addMQMenuId">
-    <div class="form-group"><label>質問文 *</label><input type="text" id="addMQQuestion" placeholder="例：お子様の年齢は？"></div>
+    <div class="form-group"><label>質問文</label><input type="text" id="addMQQuestion" placeholder="例：お子様の年齢は？"></div>
     <div class="form-group">
-      <label>回答形式 *</label>
+      <label>回答形式</label>
       <select id="addMQType" onchange="toggleOptionsField('addMQOptions', 'addMQType')">
         <option value="テキスト">テキスト入力</option>
         <option value="プルダウン">プルダウン選択</option>
@@ -270,11 +835,11 @@
       </select>
     </div>
     <div class="form-group" id="addMQOptionsWrap" style="display:none;">
-      <label>選択肢（カンマ区切り）*</label>
+      <label>選択肢（カンマ区切り）</label>
       <input type="text" id="addMQOptions" placeholder="例：0歳,1歳,2歳,3歳以上">
       <div class="options-hint">カンマ（,）で区切って入力してください</div>
     </div>
-    <div class="form-group"><label>必須/任意</label><select id="addMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
+    <div class="form-group"><label>必須 / 任意</label><select id="addMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="saveMenuQuestion()" style="flex:1;">追加する</button>
       <button class="btn-secondary" onclick="closeModal('addMenuQuestionModal')">キャンセル</button>
@@ -285,11 +850,11 @@
 <!-- メニュー別質問編集モーダル -->
 <div class="modal-overlay" id="editMenuQuestionModal">
   <div class="modal">
-    <h3>質問を編集</h3>
+    <div class="modal-title">質問を編集</div>
     <input type="hidden" id="editMQId">
-    <div class="form-group"><label>質問文 *</label><input type="text" id="editMQQuestion"></div>
+    <div class="form-group"><label>質問文</label><input type="text" id="editMQQuestion"></div>
     <div class="form-group">
-      <label>回答形式 *</label>
+      <label>回答形式</label>
       <select id="editMQType" onchange="toggleOptionsField('editMQOptions', 'editMQType')">
         <option value="テキスト">テキスト入力</option>
         <option value="プルダウン">プルダウン選択</option>
@@ -301,10 +866,10 @@
       <label>選択肢（カンマ区切り）</label>
       <input type="text" id="editMQOptions">
     </div>
-    <div class="form-group"><label>必須/任意</label><select id="editMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
-    <div class="form-group"><label>有効/無効</label><select id="editMQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
+    <div class="form-group"><label>必須 / 任意</label><select id="editMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
+    <div class="form-group"><label>表示状態</label><select id="editMQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="saveMenuQuestionEdit()" style="flex:1;">保存</button>
+      <button class="btn-primary" onclick="saveMenuQuestionEdit()" style="flex:1;">保存する</button>
       <button class="btn-secondary" onclick="closeModal('editMenuQuestionModal')">キャンセル</button>
     </div>
   </div>
@@ -328,10 +893,11 @@
 
   function toggleOptionsField(optionsId, typeId) {
     const type = document.getElementById(typeId).value;
-    const wrapId = optionsId + 'Wrap';
-    const wrap = document.getElementById(wrapId);
+    const wrap = document.getElementById(optionsId + 'Wrap');
     if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
   }
+
+  const loadingHTML = `<div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div>`;
 
   async function init() {
     const now = new Date();
@@ -366,21 +932,27 @@
     if (sorted.length === 0) { list.innerHTML = '<div class="empty">予約データがありません</div>'; return; }
 
     list.innerHTML = sorted.map(r => {
+      const cls = r.status === '仮押さえ' ? 'pending' : r.status === '確定' ? 'confirmed' : 'rejected';
       const menuBlock = r.menuAnswers && r.menuAnswers.length > 0
         ? `<div class="answers-block">${r.menuAnswers.map(a => `<div class="answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`).join('')}</div>` : '';
       const commonBlock = r.commonAnswers && r.commonAnswers.length > 0
         ? `<div class="answers-block">${r.commonAnswers.map(a => `<div class="answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`).join('')}</div>` : '';
-
-      return `<div class="card">
-        <div class="card-header"><div class="card-name">${r.name}</div><div class="status-badge ${r.status === '仮押さえ' ? 'pending' : r.status === '確定' ? 'confirmed' : 'rejected'}">${r.status}</div></div>
-        <div class="card-detail">📅 ${r.date}　🕐 ${r.timeSlot}〜</div>
-        <div class="card-detail">📞 ${r.phone || '-'}</div>
-        <div class="card-detail">🎯 ${r.menu || '-'}　👥 ${r.count || '-'}</div>
-        ${menuBlock}${commonBlock}
-        ${r.note ? `<div class="card-detail">📝 ${r.note}</div>` : ''}
-        <div class="card-detail" style="color:#bbb;font-size:11px;">リクエスト：${r.requestedAt}</div>
-        ${r.status === '仮押さえ' ? `<div class="card-actions"><button class="btn-confirm" onclick="updateStatus('${r.id}','確定')">✓ 確定</button><button class="btn-reject" onclick="updateStatus('${r.id}','不可')">✗ 不可</button></div>` : ''}
-      </div>`;
+      return `
+        <div class="res-card ${cls}">
+          <div class="res-header">
+            <div class="res-name">${r.name}</div>
+            <div class="status-badge ${cls}">${r.status}</div>
+          </div>
+          <div class="res-details">
+            <div class="res-detail"><span class="res-detail-icon">📅</span>${r.date}　${r.timeSlot}〜</div>
+            <div class="res-detail"><span class="res-detail-icon">📞</span>${r.phone || '—'}</div>
+            <div class="res-detail"><span class="res-detail-icon">🎯</span>${r.menu || '—'}　<span style="color:var(--text-light)">|</span>　👥 ${r.count || '—'}</div>
+            ${r.note ? `<div class="res-detail"><span class="res-detail-icon">📝</span>${r.note}</div>` : ''}
+          </div>
+          ${menuBlock}${commonBlock}
+          <div class="res-meta">リクエスト：${r.requestedAt}</div>
+          ${r.status === '仮押さえ' ? `<div class="res-actions"><button class="btn-confirm" onclick="updateStatus('${r.id}','確定')">確定する</button><button class="btn-reject" onclick="updateStatus('${r.id}','不可')">不可にする</button></div>` : ''}
+        </div>`;
     }).join('');
   }
 
@@ -422,7 +994,7 @@
       <div class="schedule-card">
         <div class="schedule-card-header">
           <div class="schedule-date">${s.date}</div>
-          <button class="btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteSchedule('${s.date}')">削除</button>
+          <button class="btn-danger" onclick="deleteSchedule('${s.date}')">削除</button>
         </div>
         <div class="slot-grid">
           ${TIME_SLOTS.map(t => {
@@ -536,7 +1108,6 @@
   function renderMenuList() {
     const list = document.getElementById('menuList');
     if (allMenus.length === 0) { list.innerHTML = '<div class="empty">メニューがありません</div>'; return; }
-
     list.innerHTML = allMenus.map(m => {
       const mqs = allMenuQuestions.filter(q => q.menuId === m.id);
       const mqHtml = mqs.length > 0
@@ -549,31 +1120,31 @@
               <span class="badge type">${q.type}</span>
               <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
               <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
-              ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:#aaa;">選択肢：${q.options.join('、')}</span>` : ''}
+              ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:var(--text-light);">${q.options.join(' / ')}</span>` : ''}
             </div>
             <div class="question-actions">
               <button class="btn-small" onclick="openEditMenuQuestion('${q.id}')">編集</button>
-              <button class="btn-small" style="color:#e57373;border-color:#e57373;" onclick="deleteMenuQuestion('${q.id}')">削除</button>
+              <button class="btn-small danger" onclick="deleteMenuQuestion('${q.id}')">削除</button>
             </div>
           </div>`).join('')
-        : '<div style="font-size:12px;color:#bbb;padding:8px 0;">質問がありません</div>';
-
-      return `<div class="menu-card">
-        <div class="menu-card-header">
-          <div class="menu-name">${m.name}</div>
-          <span class="badge ${m.enabled === '有効' ? 'enabled' : 'disabled'}">${m.enabled}</span>
-        </div>
-        ${m.description ? `<div class="menu-desc">${m.description}</div>` : ''}
-        <div class="menu-actions">
-          <button class="btn-secondary" onclick="openEditMenu('${m.id}')">メニュー編集</button>
-          <button class="btn-secondary" onclick="openAddMenuQuestion('${m.id}','${m.name}')">＋ 質問追加</button>
-          <button class="btn-danger" onclick="deleteMenu('${m.id}')">削除</button>
-        </div>
-        <div class="menu-questions-section">
-          <div class="menu-questions-title">このメニューの質問</div>
-          ${mqHtml}
-        </div>
-      </div>`;
+        : '<div style="font-size:12px;color:var(--text-light);padding:6px 0;">質問がありません</div>';
+      return `
+        <div class="menu-card">
+          <div class="menu-card-header">
+            <div class="menu-name">${m.name}</div>
+            <span class="badge ${m.enabled === '有効' ? 'enabled' : 'disabled'}">${m.enabled}</span>
+          </div>
+          ${m.description ? `<div class="menu-desc">${m.description}</div>` : '<div style="margin-bottom:12px;"></div>'}
+          <div class="menu-actions">
+            <button class="btn-secondary" onclick="openEditMenu('${m.id}')">編集</button>
+            <button class="btn-secondary" onclick="openAddMenuQuestion('${m.id}','${m.name}')">＋ 質問追加</button>
+            <button class="btn-danger" onclick="deleteMenu('${m.id}')">削除</button>
+          </div>
+          <div class="menu-questions-section">
+            <div class="menu-questions-title">このメニューの質問</div>
+            ${mqHtml}
+          </div>
+        </div>`;
     }).join('');
   }
 
@@ -584,17 +1155,13 @@
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addMenu', name, description }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        document.getElementById('menuName').value = '';
-        document.getElementById('menuDesc').value = '';
-        await loadMenus();
-      } else alert('エラーが発生しました。');
+      if (json.status === 'success') { document.getElementById('menuName').value = ''; document.getElementById('menuDesc').value = ''; await loadMenus(); }
+      else alert('エラーが発生しました。');
     } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   function openEditMenu(id) {
-    const m = allMenus.find(x => x.id === id);
-    if (!m) return;
+    const m = allMenus.find(x => x.id === id); if (!m) return;
     document.getElementById('editMenuId').value = m.id;
     document.getElementById('editMenuName').value = m.name;
     document.getElementById('editMenuDesc').value = m.description || '';
@@ -617,7 +1184,7 @@
   }
 
   async function deleteMenu(id) {
-    if (!confirm('このメニューを削除しますか？\nメニュー別の質問も削除されません（別途削除してください）。')) return;
+    if (!confirm('このメニューを削除しますか？')) return;
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteMenu', id }) });
       const json = await res.json();
@@ -654,8 +1221,7 @@
   }
 
   function openEditMenuQuestion(id) {
-    const q = allMenuQuestions.find(x => x.id === id);
-    if (!q) return;
+    const q = allMenuQuestions.find(x => x.id === id); if (!q) return;
     document.getElementById('editMQId').value = q.id;
     document.getElementById('editMQQuestion').value = q.question;
     document.getElementById('editMQType').value = q.type;
@@ -715,7 +1281,7 @@
     const list = document.getElementById('questionList');
     if (allCommonQuestions.length === 0) { list.innerHTML = '<div class="empty">共通質問がありません</div>'; return; }
     list.innerHTML = allCommonQuestions.map(q => `
-      <div class="question-card" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <div class="card">
         <div class="question-card-header">
           <div class="question-title">${q.order}. ${q.question}</div>
         </div>
@@ -723,7 +1289,7 @@
           <span class="badge type">${q.type}</span>
           <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
           <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
-          ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:#aaa;">選択肢：${q.options.join('、')}</span>` : ''}
+          ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:var(--text-light);">${q.options.join(' / ')}</span>` : ''}
         </div>
         <div class="question-actions">
           <button class="btn-secondary" onclick="openEditCommonQuestion('${q.id}')">編集</button>
@@ -742,17 +1308,13 @@
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addFormQuestion', question, type, options, required }) });
       const json = await res.json();
-      if (json.status === 'success') {
-        document.getElementById('qQuestion').value = '';
-        document.getElementById('qOptions').value = '';
-        await loadCommonQuestions();
-      } else alert('エラーが発生しました。');
+      if (json.status === 'success') { document.getElementById('qQuestion').value = ''; document.getElementById('qOptions').value = ''; await loadCommonQuestions(); }
+      else alert('エラーが発生しました。');
     } catch (e) { alert('通信エラーが発生しました。'); }
   }
 
   function openEditCommonQuestion(id) {
-    const q = allCommonQuestions.find(x => x.id === id);
-    if (!q) return;
+    const q = allCommonQuestions.find(x => x.id === id); if (!q) return;
     document.getElementById('editQId').value = q.id;
     document.getElementById('editQQuestion').value = q.question;
     document.getElementById('editQType').value = q.type;
@@ -800,9 +1362,9 @@
     const rejected = allReservations.filter(r => r.status === '不可').length;
     document.getElementById('statsGrid').innerHTML = `
       <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">総リクエスト数</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:#388e3c;">${confirmed}</div><div class="stat-label">確定数</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:#f57c00;">${pending}</div><div class="stat-label">仮押さえ中</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:#c62828;">${rejected}</div><div class="stat-label">不可数</div></div>`;
+      <div class="stat-card"><div class="stat-number" style="color:var(--primary-dark);">${confirmed}</div><div class="stat-label">確定数</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--primary);">${pending}</div><div class="stat-label">仮押さえ中</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--terracotta);">${rejected}</div><div class="stat-label">不可数</div></div>`;
     const timeCounts = {};
     TIME_SLOTS.forEach(t => { timeCounts[t] = 0; });
     allReservations.filter(r => r.status === '確定').forEach(r => { if (timeCounts[r.timeSlot] !== undefined) timeCounts[r.timeSlot]++; });
