@@ -50,6 +50,11 @@
     .time-btn.pending { border-color: #ffb74d; background: #fff8f0; color: #999; cursor: not-allowed; }
     .time-status { font-size: 10px; font-weight: 400; margin-top: 2px; color: #aaa; }
     .time-btn.pending .time-status { color: #ffb74d; }
+    .menu-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .menu-btn { padding: 16px; border: 2px solid #eee; border-radius: 12px; background: #fff; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; color: #333; transition: all 0.15s; }
+    .menu-btn:active { background: #f5f5f5; }
+    .menu-btn.selected { border-color: #81c784; background: #f1f8f1; }
+    .menu-btn-desc { font-size: 12px; color: #aaa; font-weight: 400; margin-top: 4px; }
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; font-size: 13px; color: #777; margin-bottom: 6px; font-weight: 500; }
     .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; background: #fafafa; }
@@ -59,6 +64,8 @@
     .selected-info { background: #f1f8f1; border: 1px solid #c8e6c9; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: #555; }
     .selected-info strong { color: #388e3c; }
     .divider { border: none; border-top: 1px solid #f0f0f0; margin: 20px 0; }
+    .menu-questions-block { background: #f9f5f0; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+    .menu-questions-label { font-size: 12px; color: #c8a97e; font-weight: 600; margin-bottom: 10px; }
     .btn-primary { display: block; width: 100%; padding: 16px; background: #555; color: #fff; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; margin-top: 20px; letter-spacing: 1px; font-weight: 600; }
     .btn-back { display: block; width: 100%; padding: 12px; background: none; color: #999; border: none; font-size: 14px; cursor: pointer; margin-top: 8px; }
     .loading { text-align: center; padding: 60px 20px; color: #999; font-size: 14px; }
@@ -118,12 +125,19 @@
       <button class="btn-back" onclick="closeModal()">キャンセル</button>
     </div>
 
-    <!-- Step2: 予約フォーム -->
+    <!-- Step2: メニュー選択 -->
+    <div id="stepMenu" style="display:none;">
+      <h2>撮影メニューを選択</h2>
+      <div class="selected-info" id="selectedTimeInfo"></div>
+      <div class="menu-grid" id="menuGrid"></div>
+      <button class="btn-back" onclick="backToTimeSlot()">← 時間枠を選び直す</button>
+    </div>
+
+    <!-- Step3: 予約フォーム -->
     <div id="stepForm" style="display:none;">
       <h2>予約情報のご入力</h2>
       <div class="selected-info" id="selectedInfo"></div>
 
-      <!-- 固定質問 -->
       <div class="form-group">
         <label>お名前 *</label>
         <input type="text" id="inputName" placeholder="例：山田 花子">
@@ -131,19 +145,6 @@
       <div class="form-group">
         <label>電話番号 *</label>
         <input type="tel" id="inputPhone" placeholder="例：090-1234-5678">
-      </div>
-      <div class="form-group">
-        <label>撮影目的 *</label>
-        <select id="inputPurpose">
-          <option value="">選択してください</option>
-          <option>家族写真</option>
-          <option>マタニティ</option>
-          <option>ニューボーン</option>
-          <option>お宮参り</option>
-          <option>七五三</option>
-          <option>記念写真</option>
-          <option>その他</option>
-        </select>
       </div>
       <div class="form-group">
         <label>撮影人数 *</label>
@@ -157,10 +158,19 @@
         </select>
       </div>
 
+      <!-- メニュー別質問 -->
+      <div id="menuQuestionsBlock" style="display:none;">
+        <hr class="divider">
+        <div class="menu-questions-block">
+          <div class="menu-questions-label" id="menuQuestionsLabel"></div>
+          <div id="menuQuestions"></div>
+        </div>
+      </div>
+
       <hr class="divider">
 
-      <!-- 追加質問（動的に生成） -->
-      <div id="extraQuestions"></div>
+      <!-- 共通質問 -->
+      <div id="commonQuestions"></div>
 
       <div class="form-group">
         <label>ご要望・ご質問（任意）</label>
@@ -168,7 +178,7 @@
       </div>
 
       <button class="btn-primary" onclick="submitReservation()">予約リクエストを送信</button>
-      <button class="btn-back" onclick="backToTimeSlot()">← 時間枠を選び直す</button>
+      <button class="btn-back" onclick="backToMenu()">← メニューを選び直す</button>
     </div>
   </div>
 </div>
@@ -194,9 +204,12 @@
 
   let currentYear, currentMonth;
   let scheduleData = {};
-  let formQuestions = [];
+  let menus = [];
+  let menuQuestions = {};
+  let commonQuestions = [];
   let selectedDate = null;
   let selectedTimeSlot = null;
+  let selectedMenu = null;
   let lineProfile = null;
   let isLoading = false;
 
@@ -210,7 +223,7 @@
       currentYear = now.getFullYear();
       currentMonth = now.getMonth() + 1;
 
-      await Promise.all([loadSchedule(), loadFormQuestions()]);
+      await Promise.all([loadSchedule(), loadFormData()]);
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('calendarSection').style.display = 'block';
@@ -223,109 +236,109 @@
     if (isLoading) return Promise.resolve();
     isLoading = true;
     const month = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-
     return new Promise((resolve) => {
       const cb = 'cb_sch_' + Date.now();
       const s = document.createElement('script');
       const timer = setTimeout(() => { isLoading = false; resolve(); }, 8000);
-
       window[cb] = function(json) {
         clearTimeout(timer);
         scheduleData = {};
-        if (json.status === 'success') {
-          json.data.forEach(d => { scheduleData[d.date] = d; });
-        }
+        if (json.status === 'success') json.data.forEach(d => { scheduleData[d.date] = d; });
         if (document.body.contains(s)) document.body.removeChild(s);
         delete window[cb];
         renderCalendar();
         isLoading = false;
         resolve();
       };
-
       s.src = `${GAS_URL}?action=getSchedule&month=${month}&callback=${cb}`;
       s.onerror = () => { clearTimeout(timer); isLoading = false; resolve(); };
       document.body.appendChild(s);
     });
   }
 
-  function loadFormQuestions() {
+  function loadFormData() {
     return new Promise((resolve) => {
-      const cb = 'cb_fq_' + Date.now();
+      const cb = 'cb_fd_' + Date.now();
       const s = document.createElement('script');
-      const timer = setTimeout(() => { formQuestions = []; resolve(); }, 8000);
-
+      const timer = setTimeout(() => { resolve(); }, 8000);
       window[cb] = function(json) {
         clearTimeout(timer);
-        formQuestions = json.status === 'success' ? json.data : [];
+        if (json.status === 'success') {
+          menus = json.menus || [];
+          commonQuestions = json.commonQuestions || [];
+        }
         if (document.body.contains(s)) document.body.removeChild(s);
         delete window[cb];
         resolve();
       };
+      s.src = `${GAS_URL}?action=getFormData&callback=${cb}`;
+      s.onerror = () => { clearTimeout(timer); resolve(); };
+      document.body.appendChild(s);
+    });
+  }
 
-      s.src = `${GAS_URL}?action=getFormQuestions&callback=${cb}`;
-      s.onerror = () => { clearTimeout(timer); formQuestions = []; resolve(); };
+  function loadMenuQuestions(menuId) {
+    if (menuQuestions[menuId]) return Promise.resolve();
+    return new Promise((resolve) => {
+      const cb = 'cb_mq_' + Date.now();
+      const s = document.createElement('script');
+      const timer = setTimeout(() => { menuQuestions[menuId] = []; resolve(); }, 8000);
+      window[cb] = function(json) {
+        clearTimeout(timer);
+        menuQuestions[menuId] = json.status === 'success' ? json.data : [];
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb];
+        resolve();
+      };
+      s.src = `${GAS_URL}?action=getMenuQuestions&menuId=${menuId}&callback=${cb}`;
+      s.onerror = () => { clearTimeout(timer); menuQuestions[menuId] = []; resolve(); };
       document.body.appendChild(s);
     });
   }
 
   function renderCalendar() {
     const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-    document.getElementById('monthLabel').textContent = `${currentYear}年 ${monthNames[currentMonth - 1]}`;
-
+    document.getElementById('monthLabel').textContent = `${currentYear}年 ${monthNames[currentMonth-1]}`;
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
-
-    ['日','月','火','水','木','金','土'].forEach((d, i) => {
+    ['日','月','火','水','木','金','土'].forEach((d,i) => {
       const el = document.createElement('div');
-      el.className = `day-header ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}`;
-      el.textContent = d;
-      grid.appendChild(el);
+      el.className = `day-header ${i===0?'sun':i===6?'sat':''}`;
+      el.textContent = d; grid.appendChild(el);
     });
-
-    const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+    const firstDay = new Date(currentYear, currentMonth-1, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    const today = new Date(); today.setHours(0,0,0,0);
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const dateObj = new Date(currentYear, currentMonth - 1, d);
-      const dayOfWeek = dateObj.getDay();
+      const dateObj = new Date(currentYear, currentMonth-1, d);
+      const dow = dateObj.getDay();
       const isPast = dateObj < today;
       const isHoliday = HOLIDAYS.includes(dateStr);
-
       const cell = document.createElement('div');
       let cellClass = 'day-cell';
-      if (dayOfWeek === 0 || isHoliday) cellClass += ' sun';
-      else if (dayOfWeek === 6) cellClass += ' sat';
+      if (dow === 0 || isHoliday) cellClass += ' sun';
+      else if (dow === 6) cellClass += ' sat';
       if (isPast) cellClass += ' past';
       if (isHoliday) cellClass += ' hol';
-
       const numEl = document.createElement('div');
-      numEl.className = 'day-num';
-      numEl.textContent = d;
-      cell.appendChild(numEl);
-
+      numEl.className = 'day-num'; numEl.textContent = d; cell.appendChild(numEl);
       if (!isPast && scheduleData[dateStr]) {
         const s = scheduleData[dateStr];
         const slotValues = Object.values(s.slots);
         const availableCount = slotValues.filter(v => v === '空き').length;
-
         const dot = document.createElement('div');
         dot.className = 'day-dot';
         if (availableCount === slotValues.length) dot.classList.add('available');
         else if (availableCount > 0) dot.classList.add('partial');
         else dot.classList.add('full');
         cell.appendChild(dot);
-
         if (availableCount > 0) {
           cellClass += ' clickable';
           cell.onclick = () => openModal(dateStr, s);
         }
       }
-
       cell.className = cellClass;
       grid.appendChild(cell);
     }
@@ -335,7 +348,6 @@
     currentMonth += delta;
     if (currentMonth > 12) { currentMonth = 1; currentYear++; }
     if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#aaa;font-size:13px;"><div class="loading-spinner" style="margin:0 auto 8px;"></div>読み込み中...</div>';
     await loadSchedule();
@@ -345,146 +357,150 @@
     selectedDate = dateStr;
     const [year, month, day] = dateStr.split('-');
     document.getElementById('modalTitle').textContent = `${year}年${parseInt(month)}月${parseInt(day)}日`;
-
     const grid = document.getElementById('timeGrid');
     grid.innerHTML = '';
-
-    const timeSlots = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
-    timeSlots.forEach(t => {
+    ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'].forEach(t => {
       const status = slotData.slots[t] || '空き';
       const btn = document.createElement('button');
-      btn.className = `time-btn ${status === '空き' ? 'available' : status === '仮押さえ' ? 'pending' : 'booked'}`;
-
-      let statusLabel = '';
-      if (status === '仮押さえ') statusLabel = '仮押さえ中';
-      else if (status !== '空き') statusLabel = '予約不可';
-
+      btn.className = `time-btn ${status === '仮押さえ' ? 'pending' : ''}`;
+      let statusLabel = status === '仮押さえ' ? '仮押さえ中' : status !== '空き' ? '予約不可' : '';
       btn.innerHTML = `${t}<div class="time-status">${statusLabel}</div>`;
       btn.disabled = status !== '空き';
       if (status === '空き') btn.onclick = () => selectTimeSlot(t);
       grid.appendChild(btn);
     });
-
     document.getElementById('stepTimeSlot').style.display = 'block';
+    document.getElementById('stepMenu').style.display = 'none';
     document.getElementById('stepForm').style.display = 'none';
     document.getElementById('modalOverlay').classList.add('active');
   }
 
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('active');
-    selectedDate = null;
-    selectedTimeSlot = null;
+    selectedDate = null; selectedTimeSlot = null; selectedMenu = null;
   }
 
   function selectTimeSlot(slot) {
     selectedTimeSlot = slot;
     const [year, month, day] = selectedDate.split('-');
-    document.getElementById('selectedInfo').innerHTML =
+    document.getElementById('selectedTimeInfo').innerHTML =
       `📅 <strong>${year}年${parseInt(month)}月${parseInt(day)}日 ${slot}〜</strong>`;
 
-    renderExtraQuestions();
+    if (menus.length === 0) {
+      selectedMenu = { id: '', name: '' };
+      showForm();
+      return;
+    }
+
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = menus.map(m => `
+      <button class="menu-btn" onclick="selectMenu('${m.id}', '${m.name}')">
+        ${m.name}
+        ${m.description ? `<div class="menu-btn-desc">${m.description}</div>` : ''}
+      </button>
+    `).join('');
 
     document.getElementById('stepTimeSlot').style.display = 'none';
+    document.getElementById('stepMenu').style.display = 'block';
+    document.getElementById('stepForm').style.display = 'none';
+  }
+
+  async function selectMenu(menuId, menuName) {
+    selectedMenu = { id: menuId, name: menuName };
+    await loadMenuQuestions(menuId);
+    showForm();
+  }
+
+  function showForm() {
+    const [year, month, day] = selectedDate.split('-');
+    document.getElementById('selectedInfo').innerHTML =
+      `📅 <strong>${year}年${parseInt(month)}月${parseInt(day)}日 ${selectedTimeSlot}〜</strong>　🎯 <strong>${selectedMenu.name}</strong>`;
+
+    const mqs = menuQuestions[selectedMenu.id] || [];
+    if (mqs.length > 0) {
+      document.getElementById('menuQuestionsLabel').textContent = `📋 ${selectedMenu.name}についてお聞かせください`;
+      document.getElementById('menuQuestions').innerHTML = renderQuestionFields(mqs, 'mq');
+      document.getElementById('menuQuestionsBlock').style.display = 'block';
+    } else {
+      document.getElementById('menuQuestionsBlock').style.display = 'none';
+    }
+
+    document.getElementById('commonQuestions').innerHTML =
+      commonQuestions.length > 0 ? renderQuestionFields(commonQuestions, 'cq') : '';
+
+    document.getElementById('stepTimeSlot').style.display = 'none';
+    document.getElementById('stepMenu').style.display = 'none';
     document.getElementById('stepForm').style.display = 'block';
   }
 
-  function renderExtraQuestions() {
-    const container = document.getElementById('extraQuestions');
-    if (formQuestions.length === 0) { container.innerHTML = ''; return; }
-
-    container.innerHTML = formQuestions.map((q, idx) => {
-      const labelText = `${q.question}${q.required ? ' *' : '　<span style="font-size:11px;color:#aaa;">任意</span>'}`;
+  function renderQuestionFields(questions, prefix) {
+    return questions.map((q, idx) => {
+      const labelText = `${q.question}${q.required ? ' *' : '<span style="font-size:11px;color:#aaa;margin-left:4px;">任意</span>'}`;
 
       if (q.type === 'テキスト') {
-        return `<div class="form-group">
-          <label>${labelText}</label>
-          <input type="text" id="eq_${idx}" placeholder="ご記入ください">
-        </div>`;
+        return `<div class="form-group"><label>${labelText}</label><input type="text" id="${prefix}_${idx}" placeholder="ご記入ください"></div>`;
       }
-
       if (q.type === 'プルダウン') {
         const opts = q.options.map(o => `<option value="${o}">${o}</option>`).join('');
-        return `<div class="form-group">
-          <label>${labelText}</label>
-          <select id="eq_${idx}">
-            <option value="">選択してください</option>
-            ${opts}
-          </select>
-        </div>`;
+        return `<div class="form-group"><label>${labelText}</label><select id="${prefix}_${idx}"><option value="">選択してください</option>${opts}</select></div>`;
       }
-
       if (q.type === 'ラジオ') {
-        const opts = q.options.map((o, i) =>
-          `<label class="radio-item">
-            <input type="radio" name="eq_${idx}" value="${o}"> ${o}
-          </label>`
-        ).join('');
-        return `<div class="form-group">
-          <label>${labelText}</label>
-          <div class="radio-group">${opts}</div>
-        </div>`;
+        const opts = q.options.map(o => `<label class="radio-item"><input type="radio" name="${prefix}_${idx}" value="${o}"> ${o}</label>`).join('');
+        return `<div class="form-group"><label>${labelText}</label><div class="radio-group">${opts}</div></div>`;
       }
-
       if (q.type === 'チェック') {
-        const opts = q.options.map((o, i) =>
-          `<label class="check-item">
-            <input type="checkbox" name="eq_${idx}" value="${o}"> ${o}
-          </label>`
-        ).join('');
-        return `<div class="form-group">
-          <label>${labelText}</label>
-          <div class="check-group">${opts}</div>
-        </div>`;
+        const opts = q.options.map(o => `<label class="check-item"><input type="checkbox" name="${prefix}_${idx}" value="${o}"> ${o}</label>`).join('');
+        return `<div class="form-group"><label>${labelText}</label><div class="check-group">${opts}</div></div>`;
       }
-
       return '';
     }).join('');
   }
 
-  function getExtraAnswers() {
-    return formQuestions.map((q, idx) => {
+  function getAnswers(questions, prefix) {
+    return questions.map((q, idx) => {
       let answer = '';
-
       if (q.type === 'テキスト' || q.type === 'プルダウン') {
-        const el = document.getElementById(`eq_${idx}`);
+        const el = document.getElementById(`${prefix}_${idx}`);
         answer = el ? el.value : '';
       } else if (q.type === 'ラジオ') {
-        const checked = document.querySelector(`input[name="eq_${idx}"]:checked`);
+        const checked = document.querySelector(`input[name="${prefix}_${idx}"]:checked`);
         answer = checked ? checked.value : '';
       } else if (q.type === 'チェック') {
-        const checked = document.querySelectorAll(`input[name="eq_${idx}"]:checked`);
-        answer = Array.from(checked).map(c => c.value);
+        answer = Array.from(document.querySelectorAll(`input[name="${prefix}_${idx}"]:checked`)).map(c => c.value);
       }
-
       return { question: q.question, answer, required: q.required };
     });
   }
 
   function backToTimeSlot() {
     document.getElementById('stepTimeSlot').style.display = 'block';
+    document.getElementById('stepMenu').style.display = 'none';
+    document.getElementById('stepForm').style.display = 'none';
+  }
+
+  function backToMenu() {
+    if (menus.length === 0) { backToTimeSlot(); return; }
+    document.getElementById('stepTimeSlot').style.display = 'none';
+    document.getElementById('stepMenu').style.display = 'block';
     document.getElementById('stepForm').style.display = 'none';
   }
 
   async function submitReservation() {
     const name = document.getElementById('inputName').value.trim();
     const phone = document.getElementById('inputPhone').value.trim();
-    const purpose = document.getElementById('inputPurpose').value;
     const count = document.getElementById('inputCount').value;
     const note = document.getElementById('inputNote').value.trim();
 
-    if (!name || !phone || !purpose || !count) {
-      alert('必須項目をすべて入力してください。');
-      return;
-    }
+    if (!name || !phone || !count) { alert('必須項目をすべて入力してください。'); return; }
 
-    const extraAnswers = getExtraAnswers();
-    for (const a of extraAnswers) {
+    const mqs = menuQuestions[selectedMenu.id] || [];
+    const menuAnswers = getAnswers(mqs, 'mq');
+    const commonAnswers = getAnswers(commonQuestions, 'cq');
+
+    for (const a of [...menuAnswers, ...commonAnswers]) {
       if (a.required) {
         const isEmpty = Array.isArray(a.answer) ? a.answer.length === 0 : !a.answer;
-        if (isEmpty) {
-          alert(`「${a.question}」は必須項目です。`);
-          return;
-        }
+        if (isEmpty) { alert(`「${a.question}」は必須項目です。`); return; }
       }
     }
 
@@ -493,8 +509,11 @@
       lineUserId: lineProfile.userId,
       name, date: selectedDate,
       timeSlot: selectedTimeSlot,
-      phone, purpose, count, note,
-      extraAnswers,
+      menu: selectedMenu.name,
+      count, note,
+      phone,
+      menuAnswers,
+      commonAnswers,
     };
 
     try {
