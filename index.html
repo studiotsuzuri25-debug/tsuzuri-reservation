@@ -7,302 +7,68 @@
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background: #fafafa;
-      color: #333;
-    }
-    header {
-      background: #fff;
-      padding: 16px;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-    }
-    header h1 {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      color: #555;
-    }
-    header p {
-      font-size: 12px;
-      color: #999;
-      margin-top: 4px;
-    }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fafafa; color: #333; }
+    header { background: #fff; padding: 16px; text-align: center; border-bottom: 1px solid #eee; }
+    header h1 { font-size: 18px; font-weight: 600; letter-spacing: 2px; color: #555; }
+    header p { font-size: 12px; color: #999; margin-top: 4px; }
     .container { padding: 16px; }
-    .section-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #555;
-      margin: 20px 0 10px;
-      letter-spacing: 1px;
-      text-align: center;
-    }
-    .notice {
-      background: #f9f5f0;
-      border-left: 3px solid #c8a97e;
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 12px;
-      color: #777;
-      line-height: 1.7;
-      margin-bottom: 16px;
-    }
-    .calendar-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .calendar-nav button {
-      background: none;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 6px 14px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .calendar-nav span {
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .calendar {
-      background: #fff;
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      text-align: center;
-    }
-    .day-header {
-      font-size: 11px;
-      color: #999;
-      padding: 4px 0;
-    }
+    .section-title { font-size: 16px; font-weight: 700; color: #555; margin: 20px 0 10px; letter-spacing: 1px; text-align: center; }
+    .notice { background: #f9f5f0; border-left: 3px solid #c8a97e; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #777; line-height: 1.7; margin-bottom: 16px; }
+    .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .calendar-nav button { background: none; border: 1px solid #ddd; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 16px; }
+    .calendar-nav span { font-size: 16px; font-weight: 600; }
+    .calendar { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+    .day-header { font-size: 11px; color: #999; padding: 4px 0; }
     .day-header.sun { color: #e57373; }
     .day-header.sat { color: #64b5f6; }
-    .day-header.hol { color: #e57373; }
-    .day-cell {
-      padding: 6px 2px;
-      border-radius: 8px;
-      font-size: 13px;
-      min-height: 44px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 2px;
-    }
+    .day-cell { padding: 6px 2px; border-radius: 8px; font-size: 13px; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; }
     .day-cell.clickable { cursor: pointer; }
     .day-cell.clickable:active { background: #f0f0f0; }
     .day-cell.past { opacity: 0.35; }
     .day-cell.sun .day-num, .day-cell.hol .day-num { color: #e57373; }
     .day-cell.sat .day-num { color: #64b5f6; }
     .day-num { font-size: 13px; font-weight: 500; }
-    .day-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
+    .day-dot { width: 8px; height: 8px; border-radius: 50%; }
     .day-dot.available { background: #81c784; }
     .day-dot.partial { background: #ffb74d; }
     .day-dot.full { background: #e0e0e0; }
-    .day-dot.closed { background: #f5f5f5; }
-    .legend {
-      display: flex;
-      gap: 0;
-      margin-top: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #666;
-      background: #f5f5f5;
-      padding: 5px 10px;
-      border-radius: 20px;
-    }
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    .legend { display: flex; margin-top: 16px; justify-content: center; flex-wrap: wrap; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; background: #f5f5f5; padding: 5px 10px; border-radius: 20px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .legend-dot.available { background: #81c784; }
     .legend-dot.partial { background: #ffb74d; }
     .legend-dot.full { background: #e0e0e0; }
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 100;
-      justify-content: center;
-      align-items: flex-end;
-    }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; }
     .modal-overlay.active { display: flex; }
-    .modal {
-      background: #fff;
-      border-radius: 20px 20px 0 0;
-      padding: 24px 20px 40px;
-      width: 100%;
-      max-height: 85vh;
-      overflow-y: auto;
-    }
-    .modal-handle {
-      width: 40px;
-      height: 4px;
-      background: #ddd;
-      border-radius: 2px;
-      margin: 0 auto 16px;
-    }
-    .modal h2 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      text-align: center;
-      color: #444;
-    }
-    .time-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .time-btn {
-      padding: 14px 8px;
-      border: 2px solid #eee;
-      border-radius: 10px;
-      background: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-      color: #333;
-    }
-    .time-btn:disabled {
-      background: #f5f5f5;
-      color: #ccc;
-      cursor: not-allowed;
-      border-color: #f0f0f0;
-    }
-    .time-btn.available:not(:disabled):hover {
-      border-color: #81c784;
-      background: #f1f8f1;
-    }
-    .time-btn.pending {
-      border-color: #ffb74d;
-      background: #fff8f0;
-      color: #999;
-      cursor: not-allowed;
-    }
-    .time-btn.booked {
-      background: #f5f5f5;
-      color: #ccc;
-      cursor: not-allowed;
-      border-color: #f0f0f0;
-    }
-    .time-status {
-      font-size: 10px;
-      font-weight: 400;
-      margin-top: 2px;
-      color: #aaa;
-    }
+    .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-height: 88vh; overflow-y: auto; }
+    .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+    .modal h2 { font-size: 17px; font-weight: 700; margin-bottom: 16px; text-align: center; color: #444; }
+    .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .time-btn { padding: 14px 8px; border: 2px solid #eee; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; color: #333; }
+    .time-btn:disabled { background: #f5f5f5; color: #ccc; cursor: not-allowed; border-color: #f0f0f0; }
+    .time-btn.pending { border-color: #ffb74d; background: #fff8f0; color: #999; cursor: not-allowed; }
+    .time-status { font-size: 10px; font-weight: 400; margin-top: 2px; color: #aaa; }
     .time-btn.pending .time-status { color: #ffb74d; }
     .form-group { margin-bottom: 16px; }
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      color: #777;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 15px;
-      background: #fafafa;
-    }
-    .selected-info {
-      background: #f1f8f1;
-      border: 1px solid #c8e6c9;
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      color: #555;
-    }
+    .form-group label { display: block; font-size: 13px; color: #777; margin-bottom: 6px; font-weight: 500; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; background: #fafafa; }
+    .radio-group, .check-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-item, .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; cursor: pointer; font-size: 14px; }
+    .radio-item input, .check-item input { width: auto; margin: 0; accent-color: #555; }
+    .selected-info { background: #f1f8f1; border: 1px solid #c8e6c9; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: #555; }
     .selected-info strong { color: #388e3c; }
-    .btn-primary {
-      display: block;
-      width: 100%;
-      padding: 16px;
-      background: #555;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 20px;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-    .btn-back {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background: none;
-      color: #999;
-      border: none;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
-      color: #999;
-      font-size: 14px;
-    }
-    .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid #eee;
-      border-top-color: #aaa;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
-    }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 20px 0; }
+    .btn-primary { display: block; width: 100%; padding: 16px; background: #555; color: #fff; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; margin-top: 20px; letter-spacing: 1px; font-weight: 600; }
+    .btn-back { display: block; width: 100%; padding: 12px; background: none; color: #999; border: none; font-size: 14px; cursor: pointer; margin-top: 8px; }
+    .loading { text-align: center; padding: 60px 20px; color: #999; font-size: 14px; }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid #eee; border-top-color: #aaa; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .complete-screen {
-      display: none;
-      text-align: center;
-      padding: 60px 24px;
-    }
+    .complete-screen { display: none; text-align: center; padding: 60px 24px; }
     .complete-screen.active { display: block; }
     .complete-icon { font-size: 64px; margin-bottom: 20px; }
-    .complete-screen h2 {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: #444;
-    }
-    .complete-screen p {
-      font-size: 14px;
-      color: #777;
-      line-height: 1.8;
-    }
+    .complete-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #444; }
+    .complete-screen p { font-size: 14px; color: #777; line-height: 1.8; }
   </style>
 </head>
 <body>
@@ -320,18 +86,15 @@
 
   <div id="calendarSection" style="display:none;">
     <div class="section-title">撮影予約カレンダー</div>
-
     <div class="notice">
       📌 こちらのカレンダーから希望日時をお選びいただき、予約リクエストを送信してください。<br>
       リクエスト送信後は<strong>仮押さえ</strong>となり、店舗からの確定連絡をもって正式な予約確定となります。
     </div>
-
     <div class="calendar-nav">
       <button onclick="changeMonth(-1)">&#8249;</button>
       <span id="monthLabel"></span>
       <button onclick="changeMonth(1)">&#8250;</button>
     </div>
-
     <div class="calendar">
       <div class="calendar-grid" id="calendarGrid"></div>
       <div class="legend">
@@ -343,7 +106,7 @@
   </div>
 </div>
 
-<!-- 時間枠選択モーダル -->
+<!-- モーダル -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -359,6 +122,8 @@
     <div id="stepForm" style="display:none;">
       <h2>予約情報のご入力</h2>
       <div class="selected-info" id="selectedInfo"></div>
+
+      <!-- 固定質問 -->
       <div class="form-group">
         <label>お名前 *</label>
         <input type="text" id="inputName" placeholder="例：山田 花子">
@@ -391,10 +156,17 @@
           <option>5名以上</option>
         </select>
       </div>
+
+      <hr class="divider">
+
+      <!-- 追加質問（動的に生成） -->
+      <div id="extraQuestions"></div>
+
       <div class="form-group">
         <label>ご要望・ご質問（任意）</label>
         <textarea id="inputNote" rows="3" placeholder="自由にご記入ください"></textarea>
       </div>
+
       <button class="btn-primary" onclick="submitReservation()">予約リクエストを送信</button>
       <button class="btn-back" onclick="backToTimeSlot()">← 時間枠を選び直す</button>
     </div>
@@ -412,7 +184,6 @@
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxn4C3CA9LMiexP5dHL3-_3ixpIfnbLgU1kisdxuzM3TaIPmMk_uhCSigXPNhJ6jEg/exec';
   const LIFF_ID = '2009277586-pDtkyCOn';
 
-  // 日本の祝日（2026年）
   const HOLIDAYS = [
     '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
     '2026-03-20','2026-04-29','2026-05-03','2026-05-04',
@@ -423,6 +194,7 @@
 
   let currentYear, currentMonth;
   let scheduleData = {};
+  let formQuestions = [];
   let selectedDate = null;
   let selectedTimeSlot = null;
   let lineProfile = null;
@@ -438,7 +210,8 @@
       currentYear = now.getFullYear();
       currentMonth = now.getMonth() + 1;
 
-      await loadSchedule();
+      await Promise.all([loadSchedule(), loadFormQuestions()]);
+
       document.getElementById('loading').style.display = 'none';
       document.getElementById('calendarSection').style.display = 'block';
     } catch (err) {
@@ -449,16 +222,12 @@
   function loadSchedule() {
     if (isLoading) return Promise.resolve();
     isLoading = true;
-
     const month = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
     return new Promise((resolve) => {
-      const cb = 'cb_' + Date.now();
+      const cb = 'cb_sch_' + Date.now();
       const s = document.createElement('script');
-      const timer = setTimeout(() => {
-        isLoading = false;
-        resolve();
-      }, 8000);
+      const timer = setTimeout(() => { isLoading = false; resolve(); }, 8000);
 
       window[cb] = function(json) {
         clearTimeout(timer);
@@ -474,11 +243,27 @@
       };
 
       s.src = `${GAS_URL}?action=getSchedule&month=${month}&callback=${cb}`;
-      s.onerror = () => {
+      s.onerror = () => { clearTimeout(timer); isLoading = false; resolve(); };
+      document.body.appendChild(s);
+    });
+  }
+
+  function loadFormQuestions() {
+    return new Promise((resolve) => {
+      const cb = 'cb_fq_' + Date.now();
+      const s = document.createElement('script');
+      const timer = setTimeout(() => { formQuestions = []; resolve(); }, 8000);
+
+      window[cb] = function(json) {
         clearTimeout(timer);
-        isLoading = false;
+        formQuestions = json.status === 'success' ? json.data : [];
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb];
         resolve();
       };
+
+      s.src = `${GAS_URL}?action=getFormQuestions&callback=${cb}`;
+      s.onerror = () => { clearTimeout(timer); formQuestions = []; resolve(); };
       document.body.appendChild(s);
     });
   }
@@ -490,11 +275,9 @@
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
 
-    const dayHeaders = ['日','月','火','水','木','金','土'];
-    const dayClasses = ['sun','','','','','','sat'];
-    dayHeaders.forEach((d, i) => {
+    ['日','月','火','水','木','金','土'].forEach((d, i) => {
       const el = document.createElement('div');
-      el.className = `day-header ${dayClasses[i]}`;
+      el.className = `day-header ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}`;
       el.textContent = d;
       grid.appendChild(el);
     });
@@ -504,9 +287,7 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    for (let i = 0; i < firstDay; i++) {
-      grid.appendChild(document.createElement('div'));
-    }
+    for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -531,21 +312,12 @@
         const s = scheduleData[dateStr];
         const slotValues = Object.values(s.slots);
         const availableCount = slotValues.filter(v => v === '空き').length;
-        const pendingCount = slotValues.filter(v => v === '仮押さえ').length;
 
         const dot = document.createElement('div');
         dot.className = 'day-dot';
-
-        if (availableCount === slotValues.length) {
-          dot.classList.add('available');
-        } else if (availableCount > 0) {
-          dot.classList.add('partial');
-        } else if (pendingCount > 0) {
-          dot.classList.add('full');
-        } else {
-          dot.classList.add('full');
-        }
-
+        if (availableCount === slotValues.length) dot.classList.add('available');
+        else if (availableCount > 0) dot.classList.add('partial');
+        else dot.classList.add('full');
         cell.appendChild(dot);
 
         if (availableCount > 0) {
@@ -566,7 +338,6 @@
 
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#aaa;font-size:13px;"><div class="loading-spinner" style="margin:0 auto 8px;"></div>読み込み中...</div>';
-
     await loadSchedule();
   }
 
@@ -579,7 +350,6 @@
     grid.innerHTML = '';
 
     const timeSlots = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
-
     timeSlots.forEach(t => {
       const status = slotData.slots[t] || '空き';
       const btn = document.createElement('button');
@@ -591,11 +361,7 @@
 
       btn.innerHTML = `${t}<div class="time-status">${statusLabel}</div>`;
       btn.disabled = status !== '空き';
-
-      if (status === '空き') {
-        btn.onclick = () => selectTimeSlot(t);
-      }
-
+      if (status === '空き') btn.onclick = () => selectTimeSlot(t);
       grid.appendChild(btn);
     });
 
@@ -615,8 +381,83 @@
     const [year, month, day] = selectedDate.split('-');
     document.getElementById('selectedInfo').innerHTML =
       `📅 <strong>${year}年${parseInt(month)}月${parseInt(day)}日 ${slot}〜</strong>`;
+
+    renderExtraQuestions();
+
     document.getElementById('stepTimeSlot').style.display = 'none';
     document.getElementById('stepForm').style.display = 'block';
+  }
+
+  function renderExtraQuestions() {
+    const container = document.getElementById('extraQuestions');
+    if (formQuestions.length === 0) { container.innerHTML = ''; return; }
+
+    container.innerHTML = formQuestions.map((q, idx) => {
+      const labelText = `${q.question}${q.required ? ' *' : '　<span style="font-size:11px;color:#aaa;">任意</span>'}`;
+
+      if (q.type === 'テキスト') {
+        return `<div class="form-group">
+          <label>${labelText}</label>
+          <input type="text" id="eq_${idx}" placeholder="ご記入ください">
+        </div>`;
+      }
+
+      if (q.type === 'プルダウン') {
+        const opts = q.options.map(o => `<option value="${o}">${o}</option>`).join('');
+        return `<div class="form-group">
+          <label>${labelText}</label>
+          <select id="eq_${idx}">
+            <option value="">選択してください</option>
+            ${opts}
+          </select>
+        </div>`;
+      }
+
+      if (q.type === 'ラジオ') {
+        const opts = q.options.map((o, i) =>
+          `<label class="radio-item">
+            <input type="radio" name="eq_${idx}" value="${o}"> ${o}
+          </label>`
+        ).join('');
+        return `<div class="form-group">
+          <label>${labelText}</label>
+          <div class="radio-group">${opts}</div>
+        </div>`;
+      }
+
+      if (q.type === 'チェック') {
+        const opts = q.options.map((o, i) =>
+          `<label class="check-item">
+            <input type="checkbox" name="eq_${idx}" value="${o}"> ${o}
+          </label>`
+        ).join('');
+        return `<div class="form-group">
+          <label>${labelText}</label>
+          <div class="check-group">${opts}</div>
+        </div>`;
+      }
+
+      return '';
+    }).join('');
+  }
+
+  function getExtraAnswers() {
+    return formQuestions.map((q, idx) => {
+      let answer = '';
+
+      if (q.type === 'テキスト' || q.type === 'プルダウン') {
+        const el = document.getElementById(`eq_${idx}`);
+        answer = el ? el.value : '';
+      } else if (q.type === 'ラジオ') {
+        const checked = document.querySelector(`input[name="eq_${idx}"]:checked`);
+        answer = checked ? checked.value : '';
+      } else if (q.type === 'チェック') {
+        const checked = document.querySelectorAll(`input[name="eq_${idx}"]:checked`);
+        answer = Array.from(checked).map(c => c.value);
+      }
+
+      return { question: q.question, answer, required: q.required };
+    });
   }
 
   function backToTimeSlot() {
@@ -636,12 +477,24 @@
       return;
     }
 
+    const extraAnswers = getExtraAnswers();
+    for (const a of extraAnswers) {
+      if (a.required) {
+        const isEmpty = Array.isArray(a.answer) ? a.answer.length === 0 : !a.answer;
+        if (isEmpty) {
+          alert(`「${a.question}」は必須項目です。`);
+          return;
+        }
+      }
+    }
+
     const params = {
       action: 'createReservation',
       lineUserId: lineProfile.userId,
       name, date: selectedDate,
       timeSlot: selectedTimeSlot,
       phone, purpose, count, note,
+      extraAnswers,
     };
 
     try {
