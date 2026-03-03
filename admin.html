@@ -698,7 +698,7 @@
 <div class="tab-bar">
   <div class="tab active" onclick="switchTab('reservations', this)">予約一覧</div>
   <div class="tab" onclick="switchTab('calendar', this)">カレンダー</div>
-  <div class="tab" onclick="switchTab('schedule', this)">営業日設定</div>
+  <div class="tab" onclick="switchTab('schedule', this)">不可日設定</div>
   <div class="tab" onclick="switchTab('menus', this)">メニュー設定</div>
   <div class="tab" onclick="switchTab('questions', this)">共通質問</div>
   <div class="tab" onclick="switchTab('stats', this)">分析</div>
@@ -722,17 +722,37 @@
   </div>
 </div>
 
-<!-- 営業日設定 -->
+<!-- 不可日設定 -->
 <div class="tab-content" id="tab-schedule">
   <div class="add-form">
-    <div class="section-title">営業日を追加</div>
+    <div class="section-title">不可日・時間を追加</div>
+    <div class="section-sub" style="font-size:12px;color:var(--text-light);margin-bottom:14px;">全日程がデフォルトで空きです。撮影できない日・時間帯を設定してください。</div>
     <div class="form-group">
       <label>日付</label>
-      <input type="date" id="scheduleDate">
+      <input type="date" id="closedDate">
     </div>
-    <button class="btn-primary" onclick="addSchedule()">追加する（全枠空きで登録）</button>
+    <div class="form-group">
+      <label>設定タイプ</label>
+      <select id="closedType" onchange="toggleClosedTimeSlot()">
+        <option value="allday">終日不可</option>
+        <option value="slot">特定時間枠のみ不可</option>
+      </select>
+    </div>
+    <div class="form-group" id="closedSlotWrap" style="display:none;">
+      <label>不可にする時間枠</label>
+      <div id="closedSlotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;">
+        <!-- JS で生成 -->
+      </div>
+    </div>
+    <div class="form-group">
+      <label>備考（任意）</label>
+      <input type="text" id="closedNote" placeholder="例：機材メンテナンスのため">
+    </div>
+    <button class="btn-primary" onclick="addClosedSetting()">不可設定を追加する</button>
   </div>
-  <div id="scheduleList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
+
+  <div class="section-title" style="margin-top:4px;">設定済み一覧</div>
+  <div id="closedList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
 
 <!-- メニュー設定 -->
@@ -1043,15 +1063,34 @@
   }
 
   // ==========================================
-  // 営業日関連
+  // 不可日設定関連
   // ==========================================
+
+  // 時間枠チェックボックスを生成
+  function initClosedSlotGrid() {
+    const grid = document.getElementById('closedSlotGrid');
+    if (!grid || grid.children.length > 0) return;
+    grid.innerHTML = TIME_SLOTS.map(t =>
+      `<label style="display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" name="closedSlot" value="${t}"> ${t}
+      </label>`
+    ).join('');
+  }
+
+  function toggleClosedTimeSlot() {
+    const type = document.getElementById('closedType').value;
+    const wrap = document.getElementById('closedSlotWrap');
+    wrap.style.display = type === 'slot' ? 'block' : 'none';
+    if (type === 'slot') initClosedSlotGrid();
+  }
+
   function loadScheduleData() {
     return new Promise((resolve) => {
       const cb = 'cb_sch_' + Date.now();
       const s = document.createElement('script');
       window[cb] = (json) => {
         allSchedule = json.data || [];
-        renderScheduleList();
+        renderClosedList();
         if (document.body.contains(s)) document.body.removeChild(s);
         delete window[cb]; resolve();
       };
@@ -1060,53 +1099,80 @@
     });
   }
 
-  function renderScheduleList() {
-    const list = document.getElementById('scheduleList');
-    if (allSchedule.length === 0) { list.innerHTML = '<div class="empty">営業日データがありません</div>'; return; }
-    list.innerHTML = allSchedule.map(s => `
+  function renderClosedList() {
+    const list = document.getElementById('closedList');
+    if (!list) return;
+    if (allSchedule.length === 0) {
+      list.innerHTML = '<div class="empty">不可設定がありません</div>';
+      return;
+    }
+    // 日付でグループ化して表示
+    const grouped = {};
+    allSchedule.forEach(item => {
+      if (!grouped[item.date]) grouped[item.date] = [];
+      // 終日不可かチェック
+      if (item.timeSlot === '') {
+        grouped[item.date].push({ id: item.id, label: '終日不可', note: item.note });
+      } else {
+        grouped[item.date].push({ id: item.id, label: item.timeSlot, note: item.note });
+      }
+    });
+    list.innerHTML = Object.entries(grouped).sort((a,b) => a[0].localeCompare(b[0])).map(([date, items]) => `
       <div class="schedule-card">
         <div class="schedule-card-header">
-          <div class="schedule-date">${s.date}</div>
-          <button class="btn-danger" onclick="deleteSchedule('${s.date}')">削除</button>
+          <div class="schedule-date">${date}</div>
         </div>
-        <div class="slot-grid">
-          ${TIME_SLOTS.map(t => {
-            const status = s.slots[t] || '空き';
-            const cls = status === '空き' ? 'available' : status === '仮押さえ' ? 'pending' : status === '確定' ? 'confirmed' : 'closed';
-            const clickable = (status === '空き' || status === '不可') ? `onclick="toggleSlot('${s.date}','${t}','${status}')"` : '';
-            return `<div class="slot-toggle ${cls}" ${clickable}>${t}<br><span style="font-size:9px;font-weight:400;">${status === '空き' ? '空き' : status === '不可' ? '不可' : status}</span></div>`;
-          }).join('')}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${items.map(item => `
+            <div style="display:flex;align-items:center;gap:6px;background:var(--error-bg);border:1px solid #f0c0c0;border-radius:8px;padding:6px 10px;font-size:12px;">
+              <span style="color:var(--error);">⛔ ${item.label}</span>
+              ${item.note ? `<span style="color:var(--text-light);">${item.note}</span>` : ''}
+              <button class="btn-small danger" onclick="deleteClosedSetting('${item.id}')">削除</button>
+            </div>`).join('')}
         </div>
       </div>`).join('');
   }
 
-  async function toggleSlot(date, timeSlot, currentStatus) {
-    const newStatus = currentStatus === '空き' ? '不可' : '空き';
-    try {
-      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateSlot', date, timeSlot, status: newStatus }) });
-      const json = await res.json();
-      if (json.status === 'success') { await loadScheduleData(); renderAdminCalendar(); }
-    } catch (e) { alert('通信エラーが発生しました。'); }
-  }
-
-  async function addSchedule() {
-    const date = document.getElementById('scheduleDate').value;
+  async function addClosedSetting() {
+    const date = document.getElementById('closedDate').value;
+    const type = document.getElementById('closedType').value;
+    const note = document.getElementById('closedNote').value.trim();
     if (!date) { alert('日付を選択してください。'); return; }
-    try {
-      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addSchedule', date }) });
-      const json = await res.json();
-      if (json.status === 'success') { document.getElementById('scheduleDate').value = ''; await loadScheduleData(); renderAdminCalendar(); }
-      else alert(json.message || 'エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+
+    if (type === 'allday') {
+      try {
+        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addClosedSetting', date, timeSlot: '', note }) });
+        const json = await res.json();
+        if (json.status === 'success') {
+          document.getElementById('closedDate').value = '';
+          document.getElementById('closedNote').value = '';
+          await loadScheduleData();
+          renderAdminCalendar();
+        } else alert('エラーが発生しました。');
+      } catch(e) { alert('通信エラーが発生しました。'); }
+    } else {
+      const slots = Array.from(document.querySelectorAll('input[name="closedSlot"]:checked')).map(c => c.value);
+      if (slots.length === 0) { alert('時間枠を1つ以上選択してください。'); return; }
+      try {
+        await Promise.all(slots.map(slot =>
+          fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addClosedSetting', date, timeSlot: slot, note }) })
+        ));
+        document.getElementById('closedDate').value = '';
+        document.getElementById('closedNote').value = '';
+        document.querySelectorAll('input[name="closedSlot"]').forEach(c => c.checked = false);
+        await loadScheduleData();
+        renderAdminCalendar();
+      } catch(e) { alert('通信エラーが発生しました。'); }
+    }
   }
 
-  async function deleteSchedule(date) {
-    if (!confirm(`${date} の営業日を削除しますか？`)) return;
+  async function deleteClosedSetting(id) {
+    if (!confirm('この不可設定を削除しますか？')) return;
     try {
-      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteSchedule', date }) });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteClosedSetting', id }) });
       const json = await res.json();
       if (json.status === 'success') { await loadScheduleData(); renderAdminCalendar(); }
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch(e) { alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
@@ -1127,18 +1193,32 @@
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${adminYear}-${String(adminMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const s = allSchedule.find(x => x.date === dateStr);
       const dow = new Date(adminYear, adminMonth-1, d).getDay();
       const cell = document.createElement('div');
       cell.className = `day-cell${dow===0?' sun':dow===6?' sat':''}`;
       const numEl = document.createElement('div');
       numEl.className = 'day-num'; numEl.textContent = d; cell.appendChild(numEl);
-      if (s) {
-        const slots = Object.values(s.slots);
-        const availCount = slots.filter(v => v === '空き').length;
+
+      // 不可設定を反映
+      const closedItems = allSchedule.filter(x => x.date === dateStr);
+      const hasAllDay = closedItems.some(x => x.timeSlot === '');
+      const closedSlots = closedItems.filter(x => x.timeSlot !== '').map(x => x.timeSlot);
+      // 予約を反映
+      const reservedSlots = allReservations.filter(r => r.date === dateStr && (r.status === '確定' || r.status === '仮押さえ')).map(r => r.timeSlot);
+      const totalSlots = TIME_SLOTS.length;
+      const unavailable = new Set([...closedSlots, ...(hasAllDay ? TIME_SLOTS : []), ...reservedSlots]);
+      const availCount = totalSlots - unavailable.size;
+
+      if (hasAllDay) {
         const tag = document.createElement('div');
-        tag.className = `slot-tag ${availCount===slots.length?'available':availCount>0?'partial':'closed'}`;
+        tag.className = 'slot-tag closed'; tag.textContent = '終日不可'; cell.appendChild(tag);
+      } else if (closedSlots.length > 0 || reservedSlots.length > 0) {
+        const tag = document.createElement('div');
+        tag.className = `slot-tag ${availCount > 0 ? 'partial' : 'closed'}`;
         tag.textContent = `${availCount}枠`; cell.appendChild(tag);
+      } else {
+        const tag = document.createElement('div');
+        tag.className = 'slot-tag available'; tag.textContent = `${totalSlots}枠`; cell.appendChild(tag);
       }
       grid.appendChild(cell);
     }
