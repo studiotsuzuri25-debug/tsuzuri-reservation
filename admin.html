@@ -678,9 +678,124 @@
     }
     .restriction-detail { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
     .restriction-note { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+    /* カスタムカレンダーモーダル */
+    .cal-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(30,45,53,0.55); z-index: 200;
+      justify-content: center; align-items: center;
+      padding: 20px; backdrop-filter: blur(3px);
+    }
+    .cal-modal-overlay.active { display: flex; }
+    .cal-modal {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 24px 20px 20px; width: 100%; max-width: 380px;
+      box-shadow: var(--shadow-lg);
+    }
+    .cal-modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .cal-modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px; font-weight: 400; letter-spacing: 2px; color: var(--text-dark);
+    }
+    .cal-modal-nav { display: flex; gap: 6px; }
+    .cal-modal-nav button {
+      width: 34px; height: 34px; border: 1px solid var(--border);
+      border-radius: 8px; background: none; font-size: 16px;
+      cursor: pointer; color: var(--text-mid); display: flex;
+      align-items: center; justify-content: center;
+    }
+    .cal-modal-nav button:hover { background: var(--primary-xlight); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+    .cal-day-header {
+      text-align: center; font-size: 11px; color: var(--text-light);
+      padding: 4px 0; font-weight: 500;
+    }
+    .cal-day-header.sun { color: #e57373; }
+    .cal-day-header.sat { color: var(--primary); }
+    .cal-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; font-size: 14px; font-weight: 500;
+      cursor: pointer; color: var(--text-dark); transition: all 0.15s;
+      border: 2px solid transparent;
+    }
+    .cal-day:hover { background: var(--primary-xlight); }
+    .cal-day.today { border-color: var(--primary-light); color: var(--primary-dark); }
+    .cal-day.selected { background: var(--primary); color: #fff !important; border-color: var(--primary); }
+    .cal-day.past { opacity: 0.3; pointer-events: none; }
+    .cal-day.sun { color: #e57373; }
+    .cal-day.sat { color: var(--primary-dark); }
+    .cal-day.empty { pointer-events: none; }
+    .cal-modal-footer { display: flex; gap: 8px; margin-top: 16px; }
+    .cal-confirm-btn {
+      flex: 1; padding: 12px; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius-sm); font-size: 14px;
+      font-weight: 600; cursor: pointer; letter-spacing: 0.5px;
+    }
+    .cal-cancel-btn {
+      padding: 12px 16px; background: none; color: var(--text-light);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; cursor: pointer;
+    }
+    .date-input-btn {
+      width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--surface-2);
+      font-size: 14px; color: var(--text-dark); cursor: pointer;
+      text-align: left; display: flex; justify-content: space-between;
+      align-items: center; font-family: 'Noto Sans JP', sans-serif;
+    }
+    .date-input-btn:hover { background: var(--primary-xlight); border-color: var(--primary-light); }
+    .date-input-btn .date-placeholder { color: var(--text-light); }
+
+    /* グローバルローディングオーバーレイ */
+    .global-loading {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.75); z-index: 9999;
+      justify-content: center; align-items: center;
+      flex-direction: column; gap: 14px;
+      backdrop-filter: blur(2px);
+    }
+    .global-loading.active { display: flex; }
+    .global-loading-spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--primary-light);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .global-loading-text {
+      font-size: 13px; color: var(--text-mid); letter-spacing: 1px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+
+<!-- グローバルローディング -->
+<div class="global-loading" id="globalLoading">
+  <div class="global-loading-spinner"></div>
+  <div class="global-loading-text" id="globalLoadingText">処理中...</div>
+</div>
+
+<!-- カスタムカレンダーモーダル -->
+<div class="cal-modal-overlay" id="calModalOverlay">
+  <div class="cal-modal">
+    <div class="cal-modal-header">
+      <div class="cal-modal-title" id="calModalTitle"></div>
+      <div class="cal-modal-nav">
+        <button onclick="calChangeMonth(-1)">&#8249;</button>
+        <button onclick="calChangeMonth(1)">&#8250;</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-modal-footer">
+      <button class="cal-confirm-btn" onclick="calConfirm()">この日を選択</button>
+      <button class="cal-cancel-btn" onclick="calClose()">キャンセル</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -722,14 +837,18 @@
   </div>
 </div>
 
-<!-- 不可日設定 -->
+<!-- 営業日設定 -->
 <div class="tab-content" id="tab-schedule">
   <div class="add-form">
     <div class="section-title">不可日・時間を追加</div>
     <div class="section-sub" style="font-size:12px;color:var(--text-light);margin-bottom:14px;">全日程がデフォルトで空きです。撮影できない日・時間帯を設定してください。</div>
     <div class="form-group">
       <label>日付</label>
-      <input type="date" id="closedDate">
+      <button class="date-input-btn" id="closedDateBtn" onclick="openCalModal('closedDate')">
+        <span id="closedDateDisplay" class="date-placeholder">日付を選択してください</span>
+        <span>📅</span>
+      </button>
+      <input type="hidden" id="closedDate">
     </div>
     <div class="form-group">
       <label>設定タイプ</label>
@@ -740,9 +859,7 @@
     </div>
     <div class="form-group" id="closedSlotWrap" style="display:none;">
       <label>不可にする時間枠</label>
-      <div id="closedSlotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;">
-        <!-- JS で生成 -->
-      </div>
+      <div id="closedSlotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;"></div>
     </div>
     <div class="form-group">
       <label>備考（任意）</label>
@@ -750,7 +867,6 @@
     </div>
     <button class="btn-primary" onclick="addClosedSetting()">不可設定を追加する</button>
   </div>
-
   <div class="section-title" style="margin-top:4px;">設定済み一覧</div>
   <div id="closedList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
@@ -1051,22 +1167,25 @@
 
   async function updateStatus(reservationId, status) {
     if (!confirm(`「${status}」にしますか？お客様にLINEで通知されます。`)) return;
+    showLoading(status === '確定' ? '確定中...' : '処理中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateReservation', reservationId, status }) });
       const json = await res.json();
       if (json.status === 'success') {
+        hideLoading();
         alert(`「${status}」に更新し通知しました。`);
         await Promise.all([loadReservations(), loadScheduleData()]);
         renderAdminCalendar(); renderStats();
-      } else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      } else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
+  // 営業日関連
+  // ==========================================
+  // ==========================================
   // 不可日設定関連
   // ==========================================
-
-  // 時間枠チェックボックスを生成
   function initClosedSlotGrid() {
     const grid = document.getElementById('closedSlotGrid');
     if (!grid || grid.children.length > 0) return;
@@ -1106,11 +1225,9 @@
       list.innerHTML = '<div class="empty">不可設定がありません</div>';
       return;
     }
-    // 日付でグループ化して表示
     const grouped = {};
     allSchedule.forEach(item => {
       if (!grouped[item.date]) grouped[item.date] = [];
-      // 終日不可かチェック
       if (item.timeSlot === '') {
         grouped[item.date].push({ id: item.id, label: '終日不可', note: item.note });
       } else {
@@ -1138,41 +1255,49 @@
     const type = document.getElementById('closedType').value;
     const note = document.getElementById('closedNote').value.trim();
     if (!date) { alert('日付を選択してください。'); return; }
-
+    showLoading('設定を保存中...');
     if (type === 'allday') {
       try {
         const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addClosedSetting', date, timeSlot: '', note }) });
         const json = await res.json();
         if (json.status === 'success') {
           document.getElementById('closedDate').value = '';
+          const disp = document.getElementById('closedDateDisplay');
+          if (disp) { disp.textContent = '日付を選択してください'; disp.className = 'date-placeholder'; }
           document.getElementById('closedNote').value = '';
           await loadScheduleData();
           renderAdminCalendar();
-        } else alert('エラーが発生しました。');
-      } catch(e) { alert('通信エラーが発生しました。'); }
+          hideLoading();
+        } else { hideLoading(); alert('エラーが発生しました。'); }
+      } catch(e) { hideLoading(); alert('通信エラーが発生しました。'); }
     } else {
       const slots = Array.from(document.querySelectorAll('input[name="closedSlot"]:checked')).map(c => c.value);
-      if (slots.length === 0) { alert('時間枠を1つ以上選択してください。'); return; }
+      if (slots.length === 0) { hideLoading(); alert('時間枠を1つ以上選択してください。'); return; }
       try {
         await Promise.all(slots.map(slot =>
           fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addClosedSetting', date, timeSlot: slot, note }) })
         ));
         document.getElementById('closedDate').value = '';
+        const disp = document.getElementById('closedDateDisplay');
+        if (disp) { disp.textContent = '日付を選択してください'; disp.className = 'date-placeholder'; }
         document.getElementById('closedNote').value = '';
         document.querySelectorAll('input[name="closedSlot"]').forEach(c => c.checked = false);
         await loadScheduleData();
         renderAdminCalendar();
-      } catch(e) { alert('通信エラーが発生しました。'); }
+        hideLoading();
+      } catch(e) { hideLoading(); alert('通信エラーが発生しました。'); }
     }
   }
 
   async function deleteClosedSetting(id) {
     if (!confirm('この不可設定を削除しますか？')) return;
+    showLoading('削除中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteClosedSetting', id }) });
       const json = await res.json();
-      if (json.status === 'success') { await loadScheduleData(); renderAdminCalendar(); }
-    } catch(e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { await loadScheduleData(); renderAdminCalendar(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch(e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
@@ -1193,32 +1318,18 @@
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${adminYear}-${String(adminMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const s = allSchedule.find(x => x.date === dateStr);
       const dow = new Date(adminYear, adminMonth-1, d).getDay();
       const cell = document.createElement('div');
       cell.className = `day-cell${dow===0?' sun':dow===6?' sat':''}`;
       const numEl = document.createElement('div');
       numEl.className = 'day-num'; numEl.textContent = d; cell.appendChild(numEl);
-
-      // 不可設定を反映
-      const closedItems = allSchedule.filter(x => x.date === dateStr);
-      const hasAllDay = closedItems.some(x => x.timeSlot === '');
-      const closedSlots = closedItems.filter(x => x.timeSlot !== '').map(x => x.timeSlot);
-      // 予約を反映
-      const reservedSlots = allReservations.filter(r => r.date === dateStr && (r.status === '確定' || r.status === '仮押さえ')).map(r => r.timeSlot);
-      const totalSlots = TIME_SLOTS.length;
-      const unavailable = new Set([...closedSlots, ...(hasAllDay ? TIME_SLOTS : []), ...reservedSlots]);
-      const availCount = totalSlots - unavailable.size;
-
-      if (hasAllDay) {
+      if (s) {
+        const slots = Object.values(s.slots);
+        const availCount = slots.filter(v => v === '空き').length;
         const tag = document.createElement('div');
-        tag.className = 'slot-tag closed'; tag.textContent = '終日不可'; cell.appendChild(tag);
-      } else if (closedSlots.length > 0 || reservedSlots.length > 0) {
-        const tag = document.createElement('div');
-        tag.className = `slot-tag ${availCount > 0 ? 'partial' : 'closed'}`;
+        tag.className = `slot-tag ${availCount===slots.length?'available':availCount>0?'partial':'closed'}`;
         tag.textContent = `${availCount}枠`; cell.appendChild(tag);
-      } else {
-        const tag = document.createElement('div');
-        tag.className = 'slot-tag available'; tag.textContent = `${totalSlots}枠`; cell.appendChild(tag);
       }
       grid.appendChild(cell);
     }
@@ -1321,12 +1432,13 @@
     const name = document.getElementById('menuName').value.trim();
     const description = document.getElementById('menuDesc').value.trim();
     if (!name) { alert('メニュー名を入力してください。'); return; }
+    showLoading('メニューを追加中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addMenu', name, description }) });
       const json = await res.json();
-      if (json.status === 'success') { document.getElementById('menuName').value = ''; document.getElementById('menuDesc').value = ''; await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { document.getElementById('menuName').value = ''; document.getElementById('menuDesc').value = ''; await loadMenus(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openEditMenu(id) {
@@ -1344,22 +1456,24 @@
     const description = document.getElementById('editMenuDesc').value.trim();
     const enabled = document.getElementById('editMenuEnabled').value;
     if (!name) { alert('メニュー名を入力してください。'); return; }
+    showLoading('保存中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateMenu', id, name, description, enabled }) });
       const json = await res.json();
-      if (json.status === 'success') { closeModal('editMenuModal'); await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { closeModal('editMenuModal'); await loadMenus(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteMenu(id) {
     if (!confirm('このメニューを削除しますか？')) return;
+    showLoading('削除中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteMenu', id }) });
       const json = await res.json();
-      if (json.status === 'success') await loadMenus();
-      else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { await loadMenus(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openAddMenuQuestion(menuId, menuName) {
@@ -1490,12 +1604,13 @@
       params.timeSlots = slots;
     }
 
+    showLoading('制限を保存中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(params) });
       const json = await res.json();
-      if (json.status === 'success') { closeModal('addRestrictionModal'); await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { closeModal('addRestrictionModal'); await loadMenus(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteRestriction(id, menuId) {
@@ -1554,12 +1669,13 @@
     const required = document.getElementById('qRequired').value;
     if (!question) { alert('質問文を入力してください。'); return; }
     if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
+    showLoading('質問を追加中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'addFormQuestion', question, type, options, required }) });
       const json = await res.json();
-      if (json.status === 'success') { document.getElementById('qQuestion').value = ''; document.getElementById('qOptions').value = ''; await loadCommonQuestions(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { document.getElementById('qQuestion').value = ''; document.getElementById('qOptions').value = ''; await loadCommonQuestions(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openEditCommonQuestion(id) {
@@ -1583,12 +1699,13 @@
     const required = document.getElementById('editQRequired').value;
     const enabled = document.getElementById('editQEnabled').value;
     if (!question) { alert('質問文を入力してください。'); return; }
+    showLoading('保存中...');
     try {
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateFormQuestion', id, question, type, options, required, enabled }) });
       const json = await res.json();
-      if (json.status === 'success') { closeModal('editQuestionModal'); await loadCommonQuestions(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+      if (json.status === 'success') { closeModal('editQuestionModal'); await loadCommonQuestions(); hideLoading(); }
+      else { hideLoading(); alert('エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteCommonQuestion(id) {
@@ -1625,6 +1742,99 @@
         <div class="bar-value">${timeCounts[t]}</div>
       </div>`).join('');
     document.getElementById('chartContainer').style.display = 'block';
+  }
+
+
+  // ==========================================
+  // グローバルローディング
+  // ==========================================
+  function showLoading(text) {
+    document.getElementById('globalLoadingText').textContent = text || '処理中...';
+    document.getElementById('globalLoading').classList.add('active');
+  }
+  function hideLoading() {
+    document.getElementById('globalLoading').classList.remove('active');
+  }
+
+  // ==========================================
+  // カスタムカレンダーモーダル
+  // ==========================================
+  let calYear, calMonth, calSelectedDate = null, calTargetId = null, calOnSelect = null;
+
+  function openCalModal(targetId, onSelect) {
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth() + 1;
+    calTargetId = targetId;
+    calOnSelect = onSelect || null;
+    calSelectedDate = document.getElementById(targetId) ? document.getElementById(targetId).value : null;
+    renderCalModal();
+    document.getElementById('calModalOverlay').classList.add('active');
+  }
+
+  function calClose() {
+    document.getElementById('calModalOverlay').classList.remove('active');
+  }
+
+  function calConfirm() {
+    if (!calSelectedDate) { alert('日付を選択してください。'); return; }
+    const hidden = document.getElementById(calTargetId);
+    if (hidden) hidden.value = calSelectedDate;
+    const [y,m,d] = calSelectedDate.split('-');
+    const display = document.getElementById(calTargetId + 'Display');
+    if (display) {
+      display.textContent = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+      display.classList.remove('date-placeholder');
+    }
+    if (calOnSelect) calOnSelect(calSelectedDate);
+    calClose();
+  }
+
+  function calChangeMonth(delta) {
+    calMonth += delta;
+    if (calMonth > 12) { calMonth = 1; calYear++; }
+    if (calMonth < 1) { calMonth = 12; calYear--; }
+    renderCalModal();
+  }
+
+  function renderCalModal() {
+    const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    document.getElementById('calModalTitle').textContent = `${calYear}年 ${monthNames[calMonth-1]}`;
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    ['日','月','火','水','木','金','土'].forEach((d,i) => {
+      const el = document.createElement('div');
+      el.className = `cal-day-header ${i===0?'sun':i===6?'sat':''}`;
+      el.textContent = d; grid.appendChild(el);
+    });
+    const firstDay = new Date(calYear, calMonth-1, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+    for (let i = 0; i < firstDay; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-day empty'; grid.appendChild(el);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dateObj = new Date(calYear, calMonth-1, d);
+      const dow = dateObj.getDay();
+      const el = document.createElement('div');
+      let cls = 'cal-day';
+      if (dow === 0) cls += ' sun';
+      if (dow === 6) cls += ' sat';
+      if (dateObj < today) cls += ' past';
+      if (dateStr === calSelectedDate) cls += ' selected';
+      const isToday = dateObj.toDateString() === today.toDateString();
+      if (isToday) cls += ' today';
+      el.className = cls;
+      el.textContent = d;
+      el.onclick = () => {
+        document.querySelectorAll('.cal-day').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        calSelectedDate = dateStr;
+      };
+      grid.appendChild(el);
+    }
   }
 
   init();
