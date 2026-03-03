@@ -44,7 +44,212 @@
       min-height: 100vh;
     }
 
-    /* ヘッダー */
+    /* ===== グローバルローディング ===== */
+    #globalLoading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(30,45,53,0.45);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 16px;
+      backdrop-filter: blur(3px);
+    }
+    #globalLoading.active { display: flex; }
+    .gl-spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .gl-text {
+      color: #fff;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      font-weight: 400;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== カレンダーモーダル ===== */
+    #calModalOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(30,45,53,0.5);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      backdrop-filter: blur(3px);
+    }
+    #calModalOverlay.active { display: flex; }
+    .cal-modal {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 24px 20px 20px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: var(--shadow-lg);
+    }
+    .cal-modal-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .cal-modal-nav button {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      color: var(--text-mid);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .cal-modal-nav button:hover { border-color: var(--primary); color: var(--primary-dark); }
+    .cal-modal-month {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: var(--text-dark);
+    }
+    .cal-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .cal-dh {
+      font-size: 10px;
+      color: var(--text-light);
+      padding: 4px 0;
+      letter-spacing: 1px;
+    }
+    .cal-dh.sun { color: var(--rejected-color); }
+    .cal-dh.sat { color: var(--primary-dark); }
+    .cal-day {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-dark);
+      transition: all 0.15s;
+      border: 2px solid transparent;
+    }
+    .cal-day:hover { background: var(--primary-xlight); }
+    .cal-day.sun { color: var(--rejected-color); }
+    .cal-day.sat { color: var(--primary-dark); }
+    .cal-day.past { opacity: 0.3; pointer-events: none; }
+    .cal-day.today { border-color: var(--primary-light); }
+    .cal-day.selected { background: var(--primary); color: #fff !important; border-color: var(--primary-dark); }
+    .cal-modal-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ===== 日付入力ボタン ===== */
+    .date-input-btn {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text-dark);
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.2s;
+      text-align: left;
+    }
+    .date-input-btn:hover { border-color: var(--primary); background: var(--surface); }
+    .date-placeholder { color: var(--text-light); }
+
+    /* ===== 不可日時間枠グリッド ===== */
+    .closed-slot-item {
+      padding: 9px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      font-weight: 500;
+      transition: all 0.15s;
+      line-height: 1.4;
+      background: var(--surface);
+      color: var(--text-mid);
+      user-select: none;
+    }
+    .closed-slot-item.selected {
+      background: var(--rejected-bg);
+      color: var(--rejected-color);
+      border-color: #f0c0c0;
+    }
+    .closed-slot-item:hover:not(.selected) { background: var(--surface-2); }
+
+    /* ===== 不可日カード ===== */
+    .closed-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+      border-left: 3px solid #f0c0c0;
+    }
+    .closed-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .closed-date-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      color: var(--text-dark);
+    }
+    .closed-type-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 500;
+      background: var(--rejected-bg);
+      color: var(--rejected-color);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .closed-slots-label {
+      font-size: 12px;
+      color: var(--text-mid);
+      line-height: 1.6;
+    }
+    .closed-note {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+
+    /* ===== ヘッダー ===== */
     header {
       background: var(--surface);
       padding: 0 20px;
@@ -90,7 +295,7 @@
       letter-spacing: 1px;
     }
 
-    /* タブバー */
+    /* ===== タブ ===== */
     .tab-bar {
       background: var(--surface);
       display: flex;
@@ -120,11 +325,9 @@
       border-bottom: 2px solid #68c0d3;
     }
 
-    /* タブコンテンツ */
     .tab-content { display: none; padding: 20px 16px 40px; }
     .tab-content.active { display: block; }
 
-    /* セクションタイトル */
     .section-title {
       font-family: 'Cormorant Garamond', serif;
       font-size: 18px;
@@ -141,7 +344,6 @@
       margin-top: -10px;
     }
 
-    /* カード */
     .card {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -153,7 +355,6 @@
     }
     .card:hover { box-shadow: var(--shadow-md); }
 
-    /* 予約カード */
     .res-card {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -165,7 +366,7 @@
     }
     .res-card.pending { border-left-color: var(--primary); }
     .res-card.confirmed { border-left-color: var(--primary); }
-    .res-card.rejected { border-left-color: var(--terracotta); opacity: 0.7; }
+    .res-card.rejected { border-left-color: #d05a5a; opacity: 0.7; }
 
     .res-header {
       display: flex;
@@ -242,8 +443,8 @@
       flex: 1;
       padding: 11px;
       background: var(--surface);
-      color: var(--terracotta);
-      border: 1px solid var(--terracotta);
+      color: #d05a5a;
+      border: 1px solid #d05a5a;
       border-radius: var(--radius-sm);
       font-size: 12px;
       font-weight: 500;
@@ -254,7 +455,6 @@
     }
     .btn-reject:hover { background: var(--error-bg); }
 
-    /* フォーム */
     .add-form {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -300,7 +500,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* ボタン */
     .btn-primary {
       width: 100%;
       padding: 13px;
@@ -340,7 +539,7 @@
       font-family: 'Noto Sans JP', sans-serif;
       transition: all 0.2s;
     }
-    .btn-danger:hover { border-color: var(--terracotta); color: var(--terracotta); }
+    .btn-danger:hover { border-color: #d05a5a; color: #d05a5a; }
     .btn-small {
       padding: 5px 12px;
       border-radius: 6px;
@@ -353,10 +552,9 @@
       transition: all 0.2s;
     }
     .btn-small:hover { border-color: var(--primary); }
-    .btn-small.danger { color: var(--terracotta); }
-    .btn-small.danger:hover { border-color: var(--terracotta); }
+    .btn-small.danger { color: #d05a5a; }
+    .btn-small.danger:hover { border-color: #d05a5a; }
 
-    /* カレンダー */
     .calendar-wrap {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -391,7 +589,7 @@
     }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
     .day-header { font-size: 10px; color: var(--text-light); padding: 4px 0; letter-spacing: 1px; }
-    .day-header.sun { color: var(--terracotta); }
+    .day-header.sun { color: #d05a5a; }
     .day-header.sat { color: var(--primary); }
     .day-cell {
       padding: 5px 2px;
@@ -404,7 +602,7 @@
       justify-content: flex-start;
       gap: 2px;
     }
-    .day-cell.sun .day-num { color: var(--terracotta); }
+    .day-cell.sun .day-num { color: #d05a5a; }
     .day-cell.sat .day-num { color: var(--primary); }
     .day-num { font-size: 12px; font-weight: 400; color: var(--text-dark); }
     .slot-tag {
@@ -419,146 +617,6 @@
     .slot-tag.partial { background: var(--pending-bg); color: var(--pending-color); }
     .slot-tag.closed { background: var(--surface-2); color: var(--text-light); }
 
-    /* 営業日カード */
-    .schedule-card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-    }
-    .schedule-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .schedule-date {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 16px;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      color: var(--text-dark);
-    }
-    .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .slot-toggle {
-      padding: 9px 4px;
-      border-radius: var(--radius-sm);
-      font-size: 11px;
-      text-align: center;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      font-weight: 500;
-      transition: all 0.15s;
-      line-height: 1.4;
-    }
-    .slot-toggle.available {
-      background: var(--primary-xlight);
-      color: var(--primary-dark);
-      border-color: var(--primary-light);
-    }
-    .slot-toggle.available:hover {
-      background: var(--primary-light);
-    }
-    .slot-toggle.closed {
-      background: var(--surface-2);
-      color: var(--text-light);
-      border-color: var(--border);
-    }
-    .slot-toggle.closed:hover {
-      background: var(--border);
-    }
-    .slot-toggle.pending {
-      background: var(--pending-bg);
-      color: var(--pending-color);
-      border-color: #f0dcc0;
-      cursor: not-allowed;
-    }
-    .slot-toggle.confirmed {
-      background: #e8f0fb;
-      color: #5570a0;
-      border-color: #c8d8f0;
-      cursor: not-allowed;
-    }
-
-    /* メニューカード */
-    .menu-card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 18px;
-      margin-bottom: 12px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-    }
-    .menu-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .menu-name {
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--text-dark);
-      letter-spacing: 0.5px;
-    }
-    .menu-desc {
-      font-size: 12px;
-      color: var(--text-light);
-      margin-bottom: 12px;
-      line-height: 1.6;
-    }
-    .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-    .menu-questions-section {
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
-    .menu-questions-title {
-      font-size: 10px;
-      color: var(--text-light);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-
-    /* 質問カード */
-    .question-card {
-      background: var(--bg);
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      padding: 12px 14px;
-      margin-bottom: 8px;
-    }
-    .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .question-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-dark);
-      flex: 1;
-      margin-right: 8px;
-      line-height: 1.5;
-    }
-    .question-meta { font-size: 11px; color: var(--text-light); margin: 5px 0 7px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .question-actions { display: flex; gap: 5px; }
-
-    /* バッジ */
-    .badge {
-      display: inline-block;
-      padding: 2px 9px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-    }
-    .badge.required { background: var(--rejected-bg); color: var(--rejected-color); }
-    .badge.optional { background: var(--surface-2); color: var(--text-light); }
-    .badge.enabled { background: var(--confirmed-bg); color: var(--confirmed-color); }
-    .badge.disabled { background: var(--surface-2); color: var(--text-light); }
-    .badge.type { background: var(--primary-xlight); color: var(--primary-dark); }
-
-    /* 統計 */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -607,7 +665,6 @@
     .bar-fill { height: 100%; background: linear-gradient(90deg, #68c0d3, #4a9db0); border-radius: 3px; transition: width 0.6s ease; }
     .bar-value { width: 20px; font-size: 10px; color: var(--text-mid); }
 
-    /* ローディング・空 */
     .loading { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 13px; letter-spacing: 1px; }
     .loading-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
     .loading-dot { width: 6px; height: 6px; border-radius: 50%; background: #68c0d3; animation: pulse 1.2s ease-in-out infinite; }
@@ -616,7 +673,6 @@
     @keyframes pulse { 0%,80%,100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
     .empty { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 13px; letter-spacing: 1px; }
 
-    /* モーダル */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -649,14 +705,8 @@
     }
     .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
 
-    /* ディバイダー */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--surface-2);
-      margin: 16px 0;
-    }
+    .divider { border: none; border-top: 1px solid var(--surface-2); margin: 16px 0; }
 
-    /* 制限カード */
     .restriction-card {
       background: #fff8f0;
       border: 1px solid #f0dcc0;
@@ -669,18 +719,62 @@
       gap: 8px;
     }
     .restriction-info { flex: 1; }
-    .restriction-type {
-      font-size: 11px;
-      font-weight: 600;
-      color: #c08030;
-      letter-spacing: 0.5px;
-      margin-bottom: 3px;
-    }
+    .restriction-type { font-size: 11px; font-weight: 600; color: #c08030; letter-spacing: 0.5px; margin-bottom: 3px; }
     .restriction-detail { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
     .restriction-note { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+    .menu-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+    }
+    .menu-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .menu-name { font-size: 15px; font-weight: 500; color: var(--text-dark); letter-spacing: 0.5px; }
+    .menu-desc { font-size: 12px; color: var(--text-light); margin-bottom: 12px; line-height: 1.6; }
+    .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .menu-questions-section { border-top: 1px solid var(--border); padding-top: 12px; }
+    .menu-questions-title { font-size: 10px; color: var(--text-light); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; font-weight: 500; }
+
+    .question-card { background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 12px 14px; margin-bottom: 8px; }
+    .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .question-title { font-size: 13px; font-weight: 500; color: var(--text-dark); flex: 1; margin-right: 8px; line-height: 1.5; }
+    .question-meta { font-size: 11px; color: var(--text-light); margin: 5px 0 7px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .question-actions { display: flex; gap: 5px; }
+
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; }
+    .badge.required { background: var(--rejected-bg); color: var(--rejected-color); }
+    .badge.optional { background: var(--surface-2); color: var(--text-light); }
+    .badge.enabled { background: var(--confirmed-bg); color: var(--confirmed-color); }
+    .badge.disabled { background: var(--surface-2); color: var(--text-light); }
+    .badge.type { background: var(--primary-xlight); color: var(--primary-dark); }
   </style>
 </head>
 <body>
+
+<!-- グローバルローディング -->
+<div id="globalLoading">
+  <div class="gl-spinner"></div>
+  <div class="gl-text" id="globalLoadingText">処理中...</div>
+</div>
+
+<!-- カレンダーモーダル -->
+<div id="calModalOverlay">
+  <div class="cal-modal">
+    <div class="cal-modal-nav">
+      <button onclick="calChangeMonth(-1)">&#8249;</button>
+      <span class="cal-modal-month" id="calModalMonthLabel"></span>
+      <button onclick="calChangeMonth(1)">&#8250;</button>
+    </div>
+    <div class="cal-modal-grid" id="calModalGrid"></div>
+    <div class="cal-modal-actions">
+      <button class="btn-primary" onclick="calConfirm()" style="flex:1;">選択する</button>
+      <button class="btn-secondary" onclick="calClose()">キャンセル</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -725,14 +819,41 @@
 <!-- 不可日設定 -->
 <div class="tab-content" id="tab-schedule">
   <div class="add-form">
-    <div class="section-title">営業日を追加</div>
+    <div class="section-title">不可日・時間を追加</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:14px;line-height:1.7;">全日程がデフォルトで空きです。<br>撮影できない日・時間帯をここで設定してください。</div>
+
     <div class="form-group">
       <label>日付</label>
-      <input type="date" id="scheduleDate">
+      <button class="date-input-btn" id="closedDateBtn" onclick="openCalModal('closedDate')">
+        <span id="closedDateDisplay" class="date-placeholder">日付を選択してください</span>
+        <span>📅</span>
+      </button>
+      <input type="hidden" id="closedDate">
     </div>
-    <button class="btn-primary" onclick="addSchedule()">追加する（全枠空きで登録）</button>
+
+    <div class="form-group">
+      <label>設定タイプ</label>
+      <select id="closedType" onchange="toggleClosedTimeSlot()">
+        <option value="allday">終日不可</option>
+        <option value="slot">特定時間枠のみ不可</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="closedSlotWrap" style="display:none;">
+      <label>不可にする時間枠（複数選択可）</label>
+      <div id="closedSlotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;"></div>
+    </div>
+
+    <div class="form-group">
+      <label>備考（任意）</label>
+      <input type="text" id="closedNote" placeholder="例：機材メンテナンスのため">
+    </div>
+
+    <button class="btn-primary" onclick="addClosedSetting()">不可設定を追加する</button>
   </div>
-  <div id="scheduleList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
+
+  <div class="section-title" style="margin-top:4px;">設定済み一覧</div>
+  <div id="closedList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
 </div>
 
 <!-- メニュー設定 -->
@@ -874,12 +995,7 @@
     </div>
     <div class="form-group" id="addRSlotsWrap" style="display:none;">
       <label>受付できる時間枠（複数選択可）</label>
-      <div id="addRSlotGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;">
-        ${['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'].map(t =>
-          `<label style="display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;">
-            <input type="checkbox" name="addRSlot" value="${t}"> ${t}
-          </label>`).join('')}
-      </div>
+      <div id="addRSlotGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;"></div>
     </div>
     <div class="form-group">
       <label>備考（任意）</label>
@@ -892,7 +1008,7 @@
   </div>
 </div>
 
-
+<!-- メニュー別質問追加モーダル -->
 <div class="modal-overlay" id="addMenuQuestionModal">
   <div class="modal">
     <div class="modal-title" id="addMQTitle">質問を追加</div>
@@ -954,7 +1070,230 @@
 
   let adminYear, adminMonth;
   let allReservations = [], allSchedule = [], allMenus = [], allMenuQuestions = [], allCommonQuestions = [], allRestrictions = [];
+  let allClosedSettings = [];
 
+  // ==========================================
+  // グローバルローディング
+  // ==========================================
+  function showLoading(text) {
+    document.getElementById('globalLoadingText').textContent = text || '処理中...';
+    document.getElementById('globalLoading').classList.add('active');
+  }
+  function hideLoading() {
+    document.getElementById('globalLoading').classList.remove('active');
+  }
+
+  // ==========================================
+  // カレンダーモーダル
+  // ==========================================
+  let calTargetId = null;
+  let calYear, calMonth, calSelectedDate;
+
+  function openCalModal(targetId) {
+    calTargetId = targetId;
+    const today = new Date();
+    calYear = today.getFullYear();
+    calMonth = today.getMonth() + 1;
+    calSelectedDate = document.getElementById(targetId).value || null;
+    renderCalModal();
+    document.getElementById('calModalOverlay').classList.add('active');
+  }
+
+  function calClose() {
+    document.getElementById('calModalOverlay').classList.remove('active');
+    calTargetId = null;
+  }
+
+  function calConfirm() {
+    if (!calSelectedDate) { alert('日付を選択してください。'); return; }
+    if (calTargetId) {
+      document.getElementById(calTargetId).value = calSelectedDate;
+      // 表示用ラベルを更新
+      const displayId = calTargetId + 'Display';
+      const el = document.getElementById(displayId);
+      if (el) {
+        const d = new Date(calSelectedDate + 'T00:00:00');
+        const w = ['日','月','火','水','木','金','土'][d.getDay()];
+        el.textContent = `${calSelectedDate}（${w}）`;
+        el.classList.remove('date-placeholder');
+      }
+    }
+    calClose();
+  }
+
+  function calChangeMonth(delta) {
+    calMonth += delta;
+    if (calMonth > 12) { calMonth = 1; calYear++; }
+    if (calMonth < 1) { calMonth = 12; calYear--; }
+    renderCalModal();
+  }
+
+  function renderCalModal() {
+    const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    document.getElementById('calModalMonthLabel').textContent = `${calYear}年 ${monthNames[calMonth-1]}`;
+    const grid = document.getElementById('calModalGrid');
+    grid.innerHTML = '';
+    // ヘッダー
+    ['日','月','火','水','木','金','土'].forEach((d, i) => {
+      const el = document.createElement('div');
+      el.className = `cal-dh${i===0?' sun':i===6?' sat':''}`;
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+    const firstDay = new Date(calYear, calMonth-1, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    // 空白
+    for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+    // 日付
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const thisDate = new Date(calYear, calMonth-1, d);
+      const dow = thisDate.getDay();
+      const isPast = thisDate < today;
+      const isToday = thisDate.getTime() === today.getTime();
+      const isSelected = dateStr === calSelectedDate;
+      const el = document.createElement('div');
+      el.className = `cal-day${dow===0?' sun':dow===6?' sat':''}${isPast?' past':''}${isToday?' today':''}${isSelected?' selected':''}`;
+      el.textContent = d;
+      if (!isPast) {
+        el.onclick = () => {
+          calSelectedDate = dateStr;
+          renderCalModal();
+        };
+      }
+      grid.appendChild(el);
+    }
+  }
+
+  // ==========================================
+  // 不可日設定
+  // ==========================================
+  function toggleClosedTimeSlot() {
+    const type = document.getElementById('closedType').value;
+    const wrap = document.getElementById('closedSlotWrap');
+    wrap.style.display = type === 'slot' ? 'block' : 'none';
+    if (type === 'slot') renderClosedSlotGrid();
+  }
+
+  function renderClosedSlotGrid() {
+    const grid = document.getElementById('closedSlotGrid');
+    grid.innerHTML = TIME_SLOTS.map(t =>
+      `<div class="closed-slot-item" id="cslot_${t.replace(':','')}" onclick="toggleClosedSlotItem(this)">${t}</div>`
+    ).join('');
+  }
+
+  function toggleClosedSlotItem(el) {
+    el.classList.toggle('selected');
+  }
+
+  function getSelectedClosedSlots() {
+    return TIME_SLOTS.filter(t => {
+      const el = document.getElementById('cslot_' + t.replace(':',''));
+      return el && el.classList.contains('selected');
+    });
+  }
+
+  function loadClosedSettings() {
+    return new Promise((resolve) => {
+      const cb = 'cb_closed_' + Date.now();
+      const s = document.createElement('script');
+      window[cb] = (json) => {
+        allClosedSettings = json.data || [];
+        renderClosedList();
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb]; resolve();
+      };
+      s.src = `${GAS_URL}?action=getClosedSettings&callback=${cb}`;
+      s.onerror = () => {
+        allClosedSettings = [];
+        renderClosedList();
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb]; resolve();
+      };
+      document.body.appendChild(s);
+    });
+  }
+
+  function renderClosedList() {
+    const list = document.getElementById('closedList');
+    if (!allClosedSettings || allClosedSettings.length === 0) {
+      list.innerHTML = '<div class="empty">不可設定はありません</div>';
+      return;
+    }
+    const sorted = [...allClosedSettings].sort((a, b) => (a.date > b.date ? 1 : -1));
+    list.innerHTML = sorted.map(c => {
+      const d = new Date(c.date + 'T00:00:00');
+      const w = ['日','月','火','水','木','金','土'][d.getDay()];
+      const isAllday = c.type === 'allday' || !c.slots || c.slots.length === 0;
+      return `
+        <div class="closed-card">
+          <div class="closed-card-header">
+            <div class="closed-date-label">${c.date}（${w}）</div>
+            <button class="btn-small danger" onclick="deleteClosedSetting('${c.id}')">削除</button>
+          </div>
+          <div class="closed-type-badge">${isAllday ? '終日不可' : '時間枠不可'}</div>
+          ${!isAllday ? `<div class="closed-slots-label">不可枠：${c.slots.join('、')}</div>` : ''}
+          ${c.note ? `<div class="closed-note">📝 ${c.note}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  async function addClosedSetting() {
+    const date = document.getElementById('closedDate').value;
+    if (!date) { alert('日付を選択してください。'); return; }
+    const type = document.getElementById('closedType').value;
+    const note = document.getElementById('closedNote').value.trim();
+    let slots = [];
+    if (type === 'slot') {
+      slots = getSelectedClosedSlots();
+      if (slots.length === 0) { alert('不可にする時間枠を1つ以上選択してください。'); return; }
+    }
+    showLoading('不可設定を登録中...');
+    try {
+      const json = await gasPost('addClosedSetting', { date, type, slots: slots.join(','), note });
+      hideLoading();
+      if (json.status === 'success') {
+        // フォームリセット
+        document.getElementById('closedDate').value = '';
+        document.getElementById('closedDateDisplay').textContent = '日付を選択してください';
+        document.getElementById('closedDateDisplay').classList.add('date-placeholder');
+        document.getElementById('closedNote').value = '';
+        document.getElementById('closedType').value = 'allday';
+        document.getElementById('closedSlotWrap').style.display = 'none';
+        await loadClosedSettings();
+        renderAdminCalendar();
+      } else {
+        alert('エラーが発生しました。GAS側にaddClosedSetting処理が必要です。');
+      }
+    } catch(e) {
+      hideLoading();
+      alert('通信エラーが発生しました。');
+    }
+  }
+
+  async function deleteClosedSetting(id) {
+    if (!confirm('この不可設定を削除しますか？')) return;
+    showLoading('削除中...');
+    try {
+      const json = await gasPost('deleteClosedSetting', { id });
+      hideLoading();
+      if (json.status === 'success') {
+        await loadClosedSettings();
+        renderAdminCalendar();
+      } else {
+        alert('エラーが発生しました。');
+      }
+    } catch(e) {
+      hideLoading();
+      alert('通信エラーが発生しました。');
+    }
+  }
+
+  // ==========================================
+  // タブ・共通
+  // ==========================================
   function switchTab(name, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -970,13 +1309,25 @@
     if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
   }
 
-  const loadingHTML = `<div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div>`;
-
+  // ==========================================
+  // 初期化
+  // ==========================================
   async function init() {
     const now = new Date();
     adminYear = now.getFullYear();
     adminMonth = now.getMonth() + 1;
-    await Promise.all([loadReservations(), loadScheduleData(), loadMenus(), loadCommonQuestions()]);
+    // 不可日スロットグリッドを初期化
+    renderClosedSlotGrid();
+    // 制限モーダルのスロットグリッド初期化
+    const addRSlotGrid = document.getElementById('addRSlotGrid');
+    if (addRSlotGrid) {
+      addRSlotGrid.innerHTML = TIME_SLOTS.map(t =>
+        `<label style="display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;">
+          <input type="checkbox" name="addRSlot" value="${t}"> ${t}
+        </label>`
+      ).join('');
+    }
+    await Promise.all([loadReservations(), loadClosedSettings(), loadMenus(), loadCommonQuestions()]);
     renderAdminCalendar();
     renderStats();
   }
@@ -1003,7 +1354,6 @@
     const list = document.getElementById('reservationList');
     const sorted = [...allReservations.filter(r => r.status === '仮押さえ'), ...allReservations.filter(r => r.status !== '仮押さえ')];
     if (sorted.length === 0) { list.innerHTML = '<div class="empty">予約データがありません</div>'; return; }
-
     list.innerHTML = sorted.map(r => {
       const cls = r.status === '仮押さえ' ? 'pending' : r.status === '確定' ? 'confirmed' : 'rejected';
       const menuBlock = r.menuAnswers && r.menuAnswers.length > 0
@@ -1031,58 +1381,20 @@
 
   async function updateStatus(reservationId, status) {
     if (!confirm(`「${status}」にしますか？お客様にLINEで通知されます。`)) return;
+    showLoading('ステータスを更新中...');
     try {
       const json = await gasPost('updateReservation', { reservationId, status });
+      hideLoading();
       if (json.status === 'success') {
         alert(`「${status}」に更新し通知しました。`);
-        await Promise.all([loadReservations(), loadScheduleData()]);
+        await Promise.all([loadReservations(), loadClosedSettings()]);
         renderAdminCalendar(); renderStats();
       } else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
-  // 営業日関連
-  // ==========================================
-  function loadScheduleData() {
-    return new Promise((resolve) => {
-      const cb = 'cb_sch_' + Date.now();
-      const s = document.createElement('script');
-      window[cb] = (json) => {
-        allSchedule = json.data || [];
-        renderScheduleList();
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb]; resolve();
-      };
-      s.src = `${GAS_URL}?action=getAllSchedule&callback=${cb}`;
-      document.body.appendChild(s);
-    });
-  }
-
-  function renderScheduleList() {
-    const list = document.getElementById('scheduleList');
-    if (allSchedule.length === 0) { list.innerHTML = '<div class="empty">営業日データがありません</div>'; return; }
-    list.innerHTML = allSchedule.map(s => `
-      <div class="schedule-card">
-        <div class="schedule-card-header">
-          <div class="schedule-date">${s.date}</div>
-          <button class="btn-danger" onclick="deleteSchedule('${s.date}')">削除</button>
-        </div>
-        <div class="slot-grid">
-          ${TIME_SLOTS.map(t => {
-            const status = s.slots[t] || '空き';
-            const cls = status === '空き' ? 'available' : status === '仮押さえ' ? 'pending' : status === '確定' ? 'confirmed' : 'closed';
-            const clickable = (status === '空き' || status === '不可') ? `onclick="toggleSlot('${s.date}','${t}','${status}')"` : '';
-            return `<div class="slot-toggle ${cls}" ${clickable}>${t}<br><span style="font-size:9px;font-weight:400;">${status === '空き' ? '空き' : status === '不可' ? '不可' : status}</span></div>`;
-          }).join('')}
-        </div>
-      </div>`).join('');
-  }
-
-  // toggleSlot / addSchedule / deleteSchedule は廃止（不可日設定に移行）
-
-  // ==========================================
-  // カレンダー
+  // カレンダー（概要表示用）
   // ==========================================
   function renderAdminCalendar() {
     const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -1091,7 +1403,7 @@
     grid.innerHTML = '';
     ['日','月','火','水','木','金','土'].forEach((d,i) => {
       const el = document.createElement('div');
-      el.className = `day-header ${i===0?'sun':i===6?'sat':''}`;
+      el.className = `day-header${i===0?' sun':i===6?' sat':''}`;
       el.textContent = d; grid.appendChild(el);
     });
     const firstDay = new Date(adminYear, adminMonth-1, 1).getDay();
@@ -1099,18 +1411,21 @@
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${adminYear}-${String(adminMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const s = allSchedule.find(x => x.date === dateStr);
+      const closed = allClosedSettings.find(c => c.date === dateStr);
+      const resOnDay = allReservations.filter(r => r.date === dateStr && r.status !== '不可');
       const dow = new Date(adminYear, adminMonth-1, d).getDay();
       const cell = document.createElement('div');
       cell.className = `day-cell${dow===0?' sun':dow===6?' sat':''}`;
       const numEl = document.createElement('div');
       numEl.className = 'day-num'; numEl.textContent = d; cell.appendChild(numEl);
-      if (s) {
-        const slots = Object.values(s.slots);
-        const availCount = slots.filter(v => v === '空き').length;
+      if (closed && (closed.type === 'allday' || !closed.slots || closed.slots.length === 0)) {
         const tag = document.createElement('div');
-        tag.className = `slot-tag ${availCount===slots.length?'available':availCount>0?'partial':'closed'}`;
-        tag.textContent = `${availCount}枠`; cell.appendChild(tag);
+        tag.className = 'slot-tag closed';
+        tag.textContent = '不可'; cell.appendChild(tag);
+      } else if (resOnDay.length > 0) {
+        const tag = document.createElement('div');
+        tag.className = 'slot-tag partial';
+        tag.textContent = `${resOnDay.length}件`; cell.appendChild(tag);
       }
       grid.appendChild(cell);
     }
@@ -1213,11 +1528,13 @@
     const name = document.getElementById('menuName').value.trim();
     const description = document.getElementById('menuDesc').value.trim();
     if (!name) { alert('メニュー名を入力してください。'); return; }
+    showLoading('メニューを追加中...');
     try {
       const json = await gasPost('addMenu', { name, description });
+      hideLoading();
       if (json.status === 'success') { document.getElementById('menuName').value = ''; document.getElementById('menuDesc').value = ''; await loadMenus(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openEditMenu(id) {
@@ -1235,20 +1552,24 @@
     const description = document.getElementById('editMenuDesc').value.trim();
     const enabled = document.getElementById('editMenuEnabled').value;
     if (!name) { alert('メニュー名を入力してください。'); return; }
+    showLoading('保存中...');
     try {
       const json = await gasPost('updateMenu', { id, name, description, enabled });
+      hideLoading();
       if (json.status === 'success') { closeModal('editMenuModal'); await loadMenus(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteMenu(id) {
     if (!confirm('このメニューを削除しますか？')) return;
+    showLoading('削除中...');
     try {
       const json = await gasPost('deleteMenu', { id });
+      hideLoading();
       if (json.status === 'success') await loadMenus();
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openAddMenuQuestion(menuId, menuName) {
@@ -1270,11 +1591,13 @@
     const required = document.getElementById('addMQRequired').value;
     if (!question) { alert('質問文を入力してください。'); return; }
     if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
+    showLoading('質問を追加中...');
     try {
       const json = await gasPost('addMenuQuestion', { menuId, question, type, options, required });
+      hideLoading();
       if (json.status === 'success') { closeModal('addMenuQuestionModal'); await loadMenus(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openEditMenuQuestion(id) {
@@ -1298,24 +1621,28 @@
     const required = document.getElementById('editMQRequired').value;
     const enabled = document.getElementById('editMQEnabled').value;
     if (!question) { alert('質問文を入力してください。'); return; }
+    showLoading('保存中...');
     try {
       const json = await gasPost('updateMenuQuestion', { id, question, type, options, required, enabled });
+      hideLoading();
       if (json.status === 'success') { closeModal('editMenuQuestionModal'); await loadMenus(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteMenuQuestion(id) {
     if (!confirm('この質問を削除しますか？')) return;
+    showLoading('削除中...');
     try {
       const json = await gasPost('deleteMenuQuestion', { id });
+      hideLoading();
       if (json.status === 'success') await loadMenus();
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
-  // メニュー制限関連
+  // メニュー制限
   // ==========================================
   const DOW_NAMES = ['日曜','月曜','火曜','水曜','木曜','金曜','土曜'];
 
@@ -1363,7 +1690,6 @@
     const type = document.getElementById('addRType').value;
     const note = document.getElementById('addRNote').value.trim();
     let params = { action: 'addMenuRestriction', menuId, type, note };
-
     if (['曜日不可','曜日のみ可'].includes(type)) {
       params.dayOfWeek = document.getElementById('addRDow').value;
     } else if (type === '日付不可') {
@@ -1375,25 +1701,28 @@
       if (slots.length === 0) { alert('時間枠を1つ以上選択してください。'); return; }
       params.timeSlots = slots;
     }
-
+    showLoading('制限を追加中...');
     try {
       const json = await gasPost(params.action, params);
+      hideLoading();
       if (json.status === 'success') { closeModal('addRestrictionModal'); await loadMenus(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteRestriction(id, menuId) {
     if (!confirm('この制限を削除しますか？')) return;
+    showLoading('削除中...');
     try {
       const json = await gasPost('deleteMenuRestriction', { id });
-      if (json.status === 'success') { await loadMenus(); }
+      hideLoading();
+      if (json.status === 'success') await loadMenus();
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
-  // 共通質問関連
+  // 共通質問
   // ==========================================
   function loadCommonQuestions() {
     return new Promise((resolve) => {
@@ -1438,11 +1767,13 @@
     const required = document.getElementById('qRequired').value;
     if (!question) { alert('質問文を入力してください。'); return; }
     if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
+    showLoading('質問を追加中...');
     try {
       const json = await gasPost('addFormQuestion', { question, type, options, required });
+      hideLoading();
       if (json.status === 'success') { document.getElementById('qQuestion').value = ''; document.getElementById('qOptions').value = ''; await loadCommonQuestions(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   function openEditCommonQuestion(id) {
@@ -1466,20 +1797,24 @@
     const required = document.getElementById('editQRequired').value;
     const enabled = document.getElementById('editQEnabled').value;
     if (!question) { alert('質問文を入力してください。'); return; }
+    showLoading('保存中...');
     try {
       const json = await gasPost('updateFormQuestion', { id, question, type, options, required, enabled });
+      hideLoading();
       if (json.status === 'success') { closeModal('editQuestionModal'); await loadCommonQuestions(); }
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   async function deleteCommonQuestion(id) {
     if (!confirm('この共通質問を削除しますか？')) return;
+    showLoading('削除中...');
     try {
       const json = await gasPost('deleteFormQuestion', { id });
+      hideLoading();
       if (json.status === 'success') await loadCommonQuestions();
       else alert('エラーが発生しました。');
-    } catch (e) { alert('通信エラーが発生しました。'); }
+    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
   }
 
   // ==========================================
@@ -1494,7 +1829,7 @@
       <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">総リクエスト数</div></div>
       <div class="stat-card"><div class="stat-number" style="color:var(--primary-dark);">${confirmed}</div><div class="stat-label">確定数</div></div>
       <div class="stat-card"><div class="stat-number" style="color:var(--primary);">${pending}</div><div class="stat-label">仮押さえ中</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:var(--terracotta);">${rejected}</div><div class="stat-label">不可数</div></div>`;
+      <div class="stat-card"><div class="stat-number" style="color:#d05a5a;">${rejected}</div><div class="stat-label">不可数</div></div>`;
     const timeCounts = {};
     TIME_SLOTS.forEach(t => { timeCounts[t] = 0; });
     allReservations.filter(r => r.status === '確定').forEach(r => { if (timeCounts[r.timeSlot] !== undefined) timeCounts[r.timeSlot]++; });
@@ -1508,8 +1843,9 @@
     document.getElementById('chartContainer').style.display = 'block';
   }
 
-
-  // GAS書き込みヘルパー（JSONP経由でGETリクエスト）
+  // ==========================================
+  // GAS JSONP通信
+  // ==========================================
   function gasPost(action, params) {
     return new Promise((resolve) => {
       const cb = 'cb_post_' + Date.now() + '_' + Math.random().toString(36).slice(2);
