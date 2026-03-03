@@ -695,17 +695,31 @@
     btn.textContent = '送信中...';
 
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'createReservation',
-          lineUserId: lineProfile.userId,
-          name, date: selectedDate, timeSlot: selectedTimeSlot,
-          menu: selectedMenu.name, count, note, phone,
-          menuAnswers, commonAnswers,
-        })
+      const params = {
+        lineUserId: lineProfile.userId,
+        name, date: selectedDate, timeSlot: selectedTimeSlot,
+        menu: selectedMenu.name, count, note, phone,
+        menuAnswers, commonAnswers,
+      };
+      const encoded = encodeURIComponent(JSON.stringify(params));
+      const cbName = 'cb_submit_' + Date.now();
+      const json = await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        const timer = setTimeout(() => {
+          if (document.body.contains(s)) document.body.removeChild(s);
+          delete window[cbName];
+          reject(new Error('タイムアウト'));
+        }, 15000);
+        window[cbName] = (data) => {
+          clearTimeout(timer);
+          if (document.body.contains(s)) document.body.removeChild(s);
+          delete window[cbName];
+          resolve(data);
+        };
+        s.src = GAS_URL + '?action=createReservation&params=' + encoded + '&callback=' + cbName;
+        s.onerror = () => { clearTimeout(timer); reject(new Error('通信エラー')); };
+        document.body.appendChild(s);
       });
-      const json = await res.json();
       if (json.status === 'success') {
         document.getElementById('mainContent').style.display = 'none';
         document.getElementById('stepBar').style.display = 'none';
