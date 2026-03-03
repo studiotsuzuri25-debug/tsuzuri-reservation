@@ -655,6 +655,29 @@
       border-top: 1px solid var(--surface-2);
       margin: 16px 0;
     }
+
+    /* 制限カード */
+    .restriction-card {
+      background: #fff8f0;
+      border: 1px solid #f0dcc0;
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .restriction-info { flex: 1; }
+    .restriction-type {
+      font-size: 11px;
+      font-weight: 600;
+      color: #c08030;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .restriction-detail { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
+    .restriction-note { font-size: 11px; color: var(--text-light); margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -819,7 +842,57 @@
   </div>
 </div>
 
-<!-- メニュー別質問追加モーダル -->
+<!-- メニュー制限追加モーダル -->
+<div class="modal-overlay" id="addRestrictionModal">
+  <div class="modal">
+    <div class="modal-title" id="addRTitle">受付制限を追加</div>
+    <input type="hidden" id="addRMenuId">
+    <div class="form-group">
+      <label>制限タイプ</label>
+      <select id="addRType" onchange="toggleRestrictionFields()">
+        <option value="曜日不可">曜日不可（特定曜日を受付しない）</option>
+        <option value="曜日のみ可">曜日のみ可（特定曜日だけ受付）</option>
+        <option value="日付不可">日付不可（特定日を受付しない）</option>
+        <option value="時間枠制限">時間枠制限（受付できる時間枠を限定）</option>
+      </select>
+    </div>
+    <div class="form-group" id="addRDowWrap">
+      <label>曜日</label>
+      <select id="addRDow">
+        <option value="0">日曜日</option>
+        <option value="1">月曜日</option>
+        <option value="2">火曜日</option>
+        <option value="3">水曜日</option>
+        <option value="4">木曜日</option>
+        <option value="5">金曜日</option>
+        <option value="6">土曜日</option>
+      </select>
+    </div>
+    <div class="form-group" id="addRDateWrap" style="display:none;">
+      <label>日付</label>
+      <input type="date" id="addRDate">
+    </div>
+    <div class="form-group" id="addRSlotsWrap" style="display:none;">
+      <label>受付できる時間枠（複数選択可）</label>
+      <div id="addRSlotGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;">
+        ${['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'].map(t =>
+          `<label style="display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" name="addRSlot" value="${t}"> ${t}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>備考（任意）</label>
+      <input type="text" id="addRNote" placeholder="例：お宮参りは午前中のみ">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveRestriction()" style="flex:1;">追加する</button>
+      <button class="btn-secondary" onclick="closeModal('addRestrictionModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-overlay" id="addMenuQuestionModal">
   <div class="modal">
     <div class="modal-title" id="addMQTitle">質問を追加</div>
@@ -880,7 +953,7 @@
   const TIME_SLOTS = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 
   let adminYear, adminMonth;
-  let allReservations = [], allSchedule = [], allMenus = [], allMenuQuestions = [], allCommonQuestions = [];
+  let allReservations = [], allSchedule = [], allMenus = [], allMenuQuestions = [], allCommonQuestions = [], allRestrictions = [];
 
   function switchTab(name, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1091,9 +1164,18 @@
         const s2 = document.createElement('script');
         window[cb2] = (json2) => {
           allMenuQuestions = json2.data || [];
-          renderMenuList();
+          const cb3 = 'cb_mr_' + Date.now();
+          const s3 = document.createElement('script');
+          window[cb3] = (json3) => {
+            allRestrictions = json3.data || [];
+            renderMenuList();
+            if (document.body.contains(s3)) document.body.removeChild(s3);
+            delete window[cb3]; resolve();
+          };
+          s3.src = `${GAS_URL}?action=getAllMenuRestrictions&callback=${cb3}`;
+          document.body.appendChild(s3);
           if (document.body.contains(s2)) document.body.removeChild(s2);
-          delete window[cb2]; resolve();
+          delete window[cb2];
         };
         s2.src = `${GAS_URL}?action=getAllMenuQuestions&callback=${cb2}`;
         document.body.appendChild(s2);
@@ -1143,6 +1225,13 @@
           <div class="menu-questions-section">
             <div class="menu-questions-title">このメニューの質問</div>
             ${mqHtml}
+          </div>
+          <div class="menu-questions-section" style="margin-top:12px;">
+            <div class="menu-questions-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>受付制限</span>
+              <button class="btn-small" onclick="openAddRestriction('${m.id}','${m.name}')">＋ 制限追加</button>
+            </div>
+            <div id="restrictions-${m.id}">${renderRestrictionCards(m.id)}</div>
           </div>
         </div>`;
     }).join('');
@@ -1255,6 +1344,86 @@
       const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteMenuQuestion', id }) });
       const json = await res.json();
       if (json.status === 'success') await loadMenus();
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  // ==========================================
+  // メニュー制限関連
+  // ==========================================
+  const DOW_NAMES = ['日曜','月曜','火曜','水曜','木曜','金曜','土曜'];
+
+  function renderRestrictionCards(menuId) {
+    const rs = allRestrictions.filter(r => r.menuId === menuId);
+    if (rs.length === 0) return '<div style="font-size:12px;color:var(--text-light);padding:6px 0;">制限なし</div>';
+    return rs.map(r => {
+      let detail = '';
+      if (r.type === '曜日不可') detail = `${DOW_NAMES[r.dayOfWeek]}は受付しない`;
+      else if (r.type === '曜日のみ可') detail = `${DOW_NAMES[r.dayOfWeek]}のみ受付`;
+      else if (r.type === '日付不可') detail = `${r.date} は受付しない`;
+      else if (r.type === '時間枠制限') detail = `受付時間枠：${r.timeSlots.join('、')}`;
+      return `<div class="restriction-card">
+        <div class="restriction-info">
+          <div class="restriction-type">${r.type}</div>
+          <div class="restriction-detail">${detail}</div>
+          ${r.note ? `<div class="restriction-note">${r.note}</div>` : ''}
+        </div>
+        <button class="btn-small danger" onclick="deleteRestriction('${r.id}','${menuId}')">削除</button>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleRestrictionFields() {
+    const type = document.getElementById('addRType').value;
+    document.getElementById('addRDowWrap').style.display = ['曜日不可','曜日のみ可'].includes(type) ? 'block' : 'none';
+    document.getElementById('addRDateWrap').style.display = type === '日付不可' ? 'block' : 'none';
+    document.getElementById('addRSlotsWrap').style.display = type === '時間枠制限' ? 'block' : 'none';
+  }
+
+  function openAddRestriction(menuId, menuName) {
+    document.getElementById('addRMenuId').value = menuId;
+    document.getElementById('addRTitle').textContent = `「${menuName}」の受付制限を追加`;
+    document.getElementById('addRType').value = '曜日不可';
+    document.getElementById('addRDow').value = '0';
+    document.getElementById('addRDate').value = '';
+    document.getElementById('addRNote').value = '';
+    document.querySelectorAll('input[name="addRSlot"]').forEach(c => c.checked = false);
+    toggleRestrictionFields();
+    document.getElementById('addRestrictionModal').classList.add('active');
+  }
+
+  async function saveRestriction() {
+    const menuId = document.getElementById('addRMenuId').value;
+    const type = document.getElementById('addRType').value;
+    const note = document.getElementById('addRNote').value.trim();
+    let params = { action: 'addMenuRestriction', menuId, type, note };
+
+    if (['曜日不可','曜日のみ可'].includes(type)) {
+      params.dayOfWeek = document.getElementById('addRDow').value;
+    } else if (type === '日付不可') {
+      const date = document.getElementById('addRDate').value;
+      if (!date) { alert('日付を選択してください。'); return; }
+      params.date = date;
+    } else if (type === '時間枠制限') {
+      const slots = Array.from(document.querySelectorAll('input[name="addRSlot"]:checked')).map(c => c.value);
+      if (slots.length === 0) { alert('時間枠を1つ以上選択してください。'); return; }
+      params.timeSlots = slots;
+    }
+
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(params) });
+      const json = await res.json();
+      if (json.status === 'success') { closeModal('addRestrictionModal'); await loadMenus(); }
+      else alert('エラーが発生しました。');
+    } catch (e) { alert('通信エラーが発生しました。'); }
+  }
+
+  async function deleteRestriction(id, menuId) {
+    if (!confirm('この制限を削除しますか？')) return;
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteMenuRestriction', id }) });
+      const json = await res.json();
+      if (json.status === 'success') { await loadMenus(); }
       else alert('エラーが発生しました。');
     } catch (e) { alert('通信エラーが発生しました。'); }
   }
