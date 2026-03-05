@@ -796,6 +796,7 @@
   <div class="tab" onclick="switchTab('menus', this)">メニュー設定</div>
   <div class="tab" onclick="switchTab('questions', this)">共通質問</div>
   <div class="tab" onclick="switchTab('stats', this)">分析</div>
+  <div class="tab" onclick="switchTab('webform', this)">WEBフォーム</div>
 </div>
 
 <!-- 予約一覧 -->
@@ -917,6 +918,81 @@
   <div class="chart-wrap" id="chartContainer" style="display:none;">
     <div class="chart-title">時間帯別 確定数</div>
     <div id="timeChart"></div>
+  </div>
+</div>
+
+<!-- WEBフォーム設定 -->
+<div class="tab-content" id="tab-webform">
+  <div class="add-form">
+    <div class="section-title">フォームの表示設定</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;line-height:1.8;">
+      WEBサイトに埋め込む予約フォームのタイトルと説明文を設定します。
+    </div>
+    <div class="form-group">
+      <label>フォームタイトル</label>
+      <input type="text" id="wfTitle" placeholder="例：撮影のご予約" value="撮影日のご予約">
+    </div>
+    <div class="form-group">
+      <label>サブタイトル（任意）</label>
+      <input type="text" id="wfSubtitle" placeholder="例：ご希望のメニューと日時をお選びください">
+    </div>
+    <div class="form-group">
+      <label>完了メッセージ（LINE通知用）</label>
+      <textarea id="wfCompleteMsgLine" rows="3">予約リクエストを受け付けました。
+店舗にて確認後、LINEにてご連絡いたします。
+
+確定連絡をもって正式な予約となります。
+しばらくお待ちください。</textarea>
+    </div>
+    <div class="form-group">
+      <label>完了メッセージ（メール通知用）</label>
+      <textarea id="wfCompleteMsgEmail" rows="3">予約リクエストを受け付けました。
+店舗にて確認後、ご登録のメールアドレスにご連絡いたします。
+
+確定連絡をもって正式な予約となります。
+しばらくお待ちください。</textarea>
+    </div>
+    <button class="btn-primary" onclick="saveWebFormSettings()">設定を保存する</button>
+  </div>
+
+  <div class="section-title" style="margin-top:4px;">メニュー・質問項目</div>
+  <div style="padding:0 0 8px;">
+    <div style="background:var(--primary-xlight);border:1px solid var(--primary-light);border-radius:var(--radius-md);padding:16px;font-size:13px;color:var(--text-mid);line-height:1.9;">
+      📋 WEBフォームのメニューは <strong>「メニュー設定」タブ</strong> で管理できます。<br>
+      ❓ 質問項目は <strong>「共通質問」タブ</strong> および <strong>各メニューの「メニュー別質問」</strong> で管理できます。<br>
+      <span style="font-size:11px;color:var(--text-light);">※ LIFFアプリ（LINE予約）とWEBフォームで同じ設定が共有されます。</span>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:16px;">WordPressへの埋め込みコード</div>
+  <div style="padding:0 0 8px;">
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:10px;line-height:1.8;">
+      WordPressの固定ページやブロックエディタに以下のコードを貼り付けてください。
+    </div>
+    <div style="background:#1e2d35;border-radius:var(--radius-md);padding:16px;position:relative;">
+      <button onclick="copyEmbedCode()" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;">コピー</button>
+      <pre id="embedCodePre" style="color:#a8d8e8;font-size:12px;line-height:1.8;white-space:pre-wrap;font-family:monospace;overflow-x:auto;">&lt;iframe
+  src="https://studiotsuzuri25-debug.github.io/tsuzuri-reservation/web-form.html"
+  width="100%"
+  height="800"
+  frameborder="0"
+  style="border:none;border-radius:16px;max-width:600px;display:block;margin:0 auto;"
+  title="studio TSUZURI 予約フォーム"
+&gt;&lt;/iframe&gt;</pre>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-light);line-height:1.8;">
+      💡 <strong>Gutenbergの場合</strong>：「カスタムHTML」ブロックを追加して貼り付け<br>
+      💡 <strong>クラシックエディタの場合</strong>：「テキスト」タブに切り替えて貼り付け<br>
+      💡 高さは内容に合わせて <code>height="800"</code> の数値を調整してください
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:16px;">フォームのプレビュー</div>
+  <div style="padding:0 0 24px;">
+    <a href="https://studiotsuzuri25-debug.github.io/tsuzuri-reservation/web-form.html" target="_blank"
+       style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 18px;font-size:13px;color:var(--primary-dark);text-decoration:none;font-weight:500;">
+      🔗 WEBフォームを新しいタブで開く
+    </a>
   </div>
 </div>
 
@@ -1307,6 +1383,82 @@
     const type = document.getElementById(typeId).value;
     const wrap = document.getElementById(optionsId + 'Wrap');
     if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
+  }
+
+  // ==========================================
+  // WEBフォーム設定
+  // ==========================================
+  function loadWebFormSettings() {
+    return new Promise((resolve) => {
+      const cb = 'cb_wfs_' + Date.now();
+      const s = document.createElement('script');
+      window[cb] = (json) => {
+        if (document.body.contains(s)) document.body.removeChild(s);
+        delete window[cb];
+        if (json.status === 'success' && json.data) {
+          const d = json.data;
+          if (d.title)            document.getElementById('wfTitle').value = d.title;
+          if (d.subtitle !== undefined) document.getElementById('wfSubtitle').value = d.subtitle;
+          if (d.completeMsgLine)  document.getElementById('wfCompleteMsgLine').value = d.completeMsgLine;
+          if (d.completeMsgEmail) document.getElementById('wfCompleteMsgEmail').value = d.completeMsgEmail;
+        }
+        resolve();
+      };
+      s.src = GAS_URL + '?action=getWebFormSettings&callback=' + cb;
+      s.onerror = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; resolve(); };
+      document.body.appendChild(s);
+    });
+  }
+
+  async function saveWebFormSettings() {
+    const params = {
+      title:            document.getElementById('wfTitle').value.trim(),
+      subtitle:         document.getElementById('wfSubtitle').value.trim(),
+      completeMsgLine:  document.getElementById('wfCompleteMsgLine').value.trim(),
+      completeMsgEmail: document.getElementById('wfCompleteMsgEmail').value.trim(),
+    };
+    if (!params.title) { alert('フォームタイトルを入力してください。'); return; }
+    showLoading('設定を保存しています...');
+    try {
+      const encoded = encodeURIComponent(JSON.stringify(params));
+      const cb = 'cb_wfs_save_' + Date.now();
+      const json = await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        const timer = setTimeout(() => { reject(new Error('タイムアウト')); }, 10000);
+        window[cb] = (data) => { clearTimeout(timer); if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; resolve(data); };
+        s.src = GAS_URL + '?action=saveWebFormSettings&params=' + encoded + '&callback=' + cb;
+        s.onerror = () => { clearTimeout(timer); reject(new Error('通信エラー')); };
+        document.body.appendChild(s);
+      });
+      hideLoading();
+      if (json.status === 'success') {
+        alert('✅ 設定を保存しました。');
+      } else {
+        alert('エラーが発生しました: ' + (json.message || '不明'));
+      }
+    } catch(e) {
+      hideLoading();
+      alert('通信エラーが発生しました。');
+    }
+  }
+
+  function copyEmbedCode() {
+    const pre = document.getElementById('embedCodePre');
+    const text = pre.innerText || pre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('✅ 埋め込みコードをコピーしました。');
+    }).catch(() => {
+      // フォールバック
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('✅ 埋め込みコードをコピーしました。');
+    });
   }
 
   // ==========================================
