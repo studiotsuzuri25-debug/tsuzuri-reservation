@@ -759,6 +759,21 @@
     }
     .email-tmpl-tab:hover { border-color: var(--primary); color: var(--primary-dark); }
     .email-tmpl-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* ===== 差し込み変数ボタン ===== */
+    .var-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 10px; border: 1px solid var(--primary-light);
+      border-radius: 20px; background: var(--primary-xlight);
+      color: var(--primary-dark); font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .var-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .var-btn:active { transform: scale(0.96); }
+    .var-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+    .var-section-label {
+      font-size: 10px; color: var(--text-light); margin-bottom: 4px; margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -934,18 +949,8 @@
 <!-- メールテンプレート -->
 <div class="tab-content" id="tab-email">
   <div class="section-title">メールテンプレート設定</div>
-  <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;line-height:1.8;padding:0 0 4px;">
-    WEBフォームから予約されたお客様へ自動送信するメールの文面を編集できます。<br>
-    <strong>差し込み変数：</strong>
-    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{name}}</code>
-    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{date}}</code>
-    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{time}}</code>
-    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{menu}}</code>
-    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{count}}</code>
-    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{phone}}</code>
-  </div>
 
-  <!-- テンプレート選択タブ -->
+  <!-- テンプレート種別タブ -->
   <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
     <button class="email-tmpl-tab active" onclick="switchEmailTab('受付',this)">受付メール</button>
     <button class="email-tmpl-tab" onclick="switchEmailTab('確定',this)">確定メール</button>
@@ -954,15 +959,33 @@
   </div>
 
   <div class="add-form" id="emailTmplForm">
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:12px;" id="emailTmplDesc"></div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:14px;" id="emailTmplDesc"></div>
     <input type="hidden" id="emailTmplKey" value="受付">
+
+    <!-- 差し込み変数パネル -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:1px;margin-bottom:8px;">
+        差し込み変数（クリックでカーソル位置に挿入）
+      </div>
+      <div style="margin-bottom:6px;">
+        <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">● 基本情報</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;" id="varBtnsFixed"></div>
+      </div>
+      <div id="varBtnsDynamic"></div>
+    </div>
+
+    <!-- 最後にフォーカスしたフィールドの表示 -->
+    <div id="activeFieldIndicator" style="font-size:11px;color:var(--primary-dark);margin-bottom:8px;min-height:16px;"></div>
+
     <div class="form-group">
       <label>件名</label>
-      <input type="text" id="emailTmplSubject" placeholder="メールの件名">
+      <input type="text" id="emailTmplSubject" placeholder="メールの件名"
+        onfocus="setActiveEmailField(this,'件名')" onclick="setActiveEmailField(this,'件名')">
     </div>
     <div class="form-group">
       <label>本文</label>
-      <textarea id="emailTmplBody" rows="12" style="font-family:monospace;font-size:13px;line-height:1.8;"></textarea>
+      <textarea id="emailTmplBody" rows="12" style="font-family:monospace;font-size:13px;line-height:1.8;"
+        onfocus="setActiveEmailField(this,'本文')" onclick="setActiveEmailField(this,'本文')"></textarea>
     </div>
     <button class="btn-primary" onclick="saveEmailTemplate()">このテンプレートを保存する</button>
   </div>
@@ -1447,6 +1470,7 @@
   // ==========================================
   let emailTemplates = {};
   let currentEmailTmplKey = '受付';
+  let activeEmailField = null; // 現在フォーカス中のフィールド要素
 
   const EMAIL_TMPL_DESCS = {
     '受付':     'WEBフォームから予約リクエストが送信されたとき、お客様へ自動送信されます。',
@@ -1455,7 +1479,102 @@
     'リマインド': '撮影日の3日前にGASトリガーによって自動送信されます。',
   };
 
+  // 固定の差し込み変数定義
+  const FIXED_VARS = [
+    { label: 'お名前',   var: '{{name}}' },
+    { label: '撮影日',   var: '{{date}}' },
+    { label: '時間枠',   var: '{{time}}' },
+    { label: 'メニュー', var: '{{menu}}' },
+    { label: '人数',     var: '{{count}}' },
+    { label: '電話番号', var: '{{phone}}' },
+    { label: '全回答',   var: '{{answers}}' },
+  ];
+
+  function setActiveEmailField(el, label) {
+    activeEmailField = el;
+    const ind = document.getElementById('activeFieldIndicator');
+    if (ind) ind.textContent = '✎ 挿入先：' + label;
+  }
+
+  function insertVar(varStr) {
+    // フィールドが選択されていない場合は本文に挿入
+    if (!activeEmailField) {
+      activeEmailField = document.getElementById('emailTmplBody');
+      const ind = document.getElementById('activeFieldIndicator');
+      if (ind) ind.textContent = '✎ 挿入先：本文';
+    }
+    const el = activeEmailField;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const val = el.value;
+    el.value = val.slice(0, start) + varStr + val.slice(end);
+    // カーソルを挿入後に移動
+    const newPos = start + varStr.length;
+    el.selectionStart = newPos;
+    el.selectionEnd = newPos;
+    el.focus();
+  }
+
+  function renderVarButtons() {
+    // 固定ボタン
+    const fixedWrap = document.getElementById('varBtnsFixed');
+    if (!fixedWrap) return;
+    fixedWrap.innerHTML = FIXED_VARS.map(v =>
+      `<button class="var-btn" onclick="insertVar('${v.var}')">${v.label}</button>`
+    ).join('');
+
+    // 動的ボタン（質問から生成）
+    const dynWrap = document.getElementById('varBtnsDynamic');
+    if (!dynWrap) return;
+    const sections = [];
+
+    // 共通質問
+    const cqBtns = (commonQuestions || []).map((q, i) =>
+      `<button class="var-btn" onclick="insertVar('{{cq_${i}}}')" title="${q.question}">${q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question}</button>`
+    );
+    if (cqBtns.length > 0) {
+      sections.push(
+        `<div class="var-section-label">● 共通質問</div>` +
+        `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;">${cqBtns.join('')}</div>`
+      );
+    }
+
+    // メニュー別質問（allMenuQuestionsから）
+    if (allMenuQuestions && allMenuQuestions.length > 0) {
+      // メニューIDごとにグループ化
+      const byMenu = {};
+      allMenuQuestions.forEach(q => {
+        if (!byMenu[q.menuId]) byMenu[q.menuId] = { menuName: q.menuName || q.menuId, questions: [] };
+        byMenu[q.menuId].questions.push(q);
+      });
+      Object.keys(byMenu).forEach(menuId => {
+        const group = byMenu[menuId];
+        const btns = group.questions.map((q, i) =>
+          `<button class="var-btn" onclick="insertVar('{{mq_${menuId}_${i}}}')" title="${q.question}">${q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question}</button>`
+        );
+        if (btns.length > 0) {
+          sections.push(
+            `<div class="var-section-label">● ${group.menuName}の質問</div>` +
+            `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;">${btns.join('')}</div>`
+          );
+        }
+      });
+    }
+
+    dynWrap.innerHTML = sections.join('');
+  }
+
+  // メールタブが開いている場合のみボタン再描画（質問追加・削除時に自動呼び出し）
+  function refreshVarButtonsIfOpen() {
+    const emailTab = document.getElementById('tab-email');
+    if (emailTab && emailTab.classList.contains('active')) {
+      renderVarButtons();
+    }
+  }
+
   function loadEmailTemplates() {
+    // 毎回最新の質問リストを反映するため常にボタン再描画
+    renderVarButtons();
     if (Object.keys(emailTemplates).length > 0) {
       renderEmailTemplate(currentEmailTmplKey);
       return;
@@ -1488,6 +1607,10 @@
     document.getElementById('emailTmplSubject').value = tmpl.subject || '';
     document.getElementById('emailTmplBody').value = tmpl.body || '';
     document.getElementById('emailTmplDesc').textContent = EMAIL_TMPL_DESCS[key] || '';
+    // デフォルトのフォーカスを本文に設定
+    activeEmailField = document.getElementById('emailTmplBody');
+    const ind = document.getElementById('activeFieldIndicator');
+    if (ind) ind.textContent = '✎ 挿入先：本文';
   }
 
   async function saveEmailTemplate() {
@@ -1745,6 +1868,7 @@
           window[cb3] = (json3) => {
             allRestrictions = json3.data || [];
             renderMenuList();
+            refreshVarButtonsIfOpen();
             if (document.body.contains(s3)) document.body.removeChild(s3);
             delete window[cb3]; resolve();
           };
@@ -2029,6 +2153,7 @@
   }
 
   function renderCommonQuestions() {
+    refreshVarButtonsIfOpen();
     const list = document.getElementById('questionList');
     if (allCommonQuestions.length === 0) { list.innerHTML = '<div class="empty">共通質問がありません</div>'; return; }
     list.innerHTML = allCommonQuestions.map(q => `
