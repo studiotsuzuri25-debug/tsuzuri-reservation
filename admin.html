@@ -1529,7 +1529,7 @@
     const sections = [];
 
     // 共通質問
-    const cqBtns = (commonQuestions || []).map((q, i) =>
+    const cqBtns = (allCommonQuestions || []).map((q, i) =>
       `<button class="var-btn" onclick="insertVar('{{cq_${i}}}')" title="${q.question}">${q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question}</button>`
     );
     if (cqBtns.length > 0) {
