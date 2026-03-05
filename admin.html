@@ -750,6 +750,15 @@
     .badge.enabled { background: var(--confirmed-bg); color: var(--confirmed-color); }
     .badge.disabled { background: var(--surface-2); color: var(--text-light); }
     .badge.type { background: var(--primary-xlight); color: var(--primary-dark); }
+
+    /* ===== メールテンプレートタブ ===== */
+    .email-tmpl-tab {
+      padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--surface); color: var(--text-mid); font-size: 12px; cursor: pointer;
+      transition: all 0.15s; font-weight: 500;
+    }
+    .email-tmpl-tab:hover { border-color: var(--primary); color: var(--primary-dark); }
+    .email-tmpl-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   </style>
 </head>
 <body>
@@ -797,6 +806,7 @@
   <div class="tab" onclick="switchTab('questions', this)">共通質問</div>
   <div class="tab" onclick="switchTab('stats', this)">分析</div>
   <div class="tab" onclick="switchTab('webform', this)">WEBフォーム</div>
+  <div class="tab" onclick="switchTab('email', this); loadEmailTemplates()">メール</div>
 </div>
 
 <!-- 予約一覧 -->
@@ -918,6 +928,52 @@
   <div class="chart-wrap" id="chartContainer" style="display:none;">
     <div class="chart-title">時間帯別 確定数</div>
     <div id="timeChart"></div>
+  </div>
+</div>
+
+<!-- メールテンプレート -->
+<div class="tab-content" id="tab-email">
+  <div class="section-title">メールテンプレート設定</div>
+  <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;line-height:1.8;padding:0 0 4px;">
+    WEBフォームから予約されたお客様へ自動送信するメールの文面を編集できます。<br>
+    <strong>差し込み変数：</strong>
+    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{name}}</code>
+    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{date}}</code>
+    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{time}}</code>
+    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{menu}}</code>
+    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{count}}</code>
+    <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">{{phone}}</code>
+  </div>
+
+  <!-- テンプレート選択タブ -->
+  <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+    <button class="email-tmpl-tab active" onclick="switchEmailTab('受付',this)">受付メール</button>
+    <button class="email-tmpl-tab" onclick="switchEmailTab('確定',this)">確定メール</button>
+    <button class="email-tmpl-tab" onclick="switchEmailTab('不可',this)">不可メール</button>
+    <button class="email-tmpl-tab" onclick="switchEmailTab('リマインド',this)">リマインドメール</button>
+  </div>
+
+  <div class="add-form" id="emailTmplForm">
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:12px;" id="emailTmplDesc"></div>
+    <input type="hidden" id="emailTmplKey" value="受付">
+    <div class="form-group">
+      <label>件名</label>
+      <input type="text" id="emailTmplSubject" placeholder="メールの件名">
+    </div>
+    <div class="form-group">
+      <label>本文</label>
+      <textarea id="emailTmplBody" rows="12" style="font-family:monospace;font-size:13px;line-height:1.8;"></textarea>
+    </div>
+    <button class="btn-primary" onclick="saveEmailTemplate()">このテンプレートを保存する</button>
+  </div>
+
+  <div style="background:var(--primary-xlight);border:1px solid var(--primary-light);border-radius:var(--radius-md);padding:14px;font-size:12px;color:var(--text-mid);line-height:1.9;margin-top:8px;">
+    📬 <strong>送信タイミング</strong><br>
+    ・<strong>受付メール</strong>：WEBフォームから予約リクエスト送信時（自動）<br>
+    ・<strong>確定メール</strong>：管理画面で「確定」ボタンを押した時（自動）<br>
+    ・<strong>不可メール</strong>：管理画面で「不可」ボタンを押した時（自動）<br>
+    ・<strong>リマインドメール</strong>：撮影日の3日前（GASトリガーで自動）<br>
+    <span style="font-size:11px;color:var(--text-light);">※ LINE通知を選択されたお客様にはLINEで通知されます。</span>
   </div>
 </div>
 
@@ -1383,6 +1439,87 @@
     const type = document.getElementById(typeId).value;
     const wrap = document.getElementById(optionsId + 'Wrap');
     if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
+  }
+
+
+  // ==========================================
+  // メールテンプレート
+  // ==========================================
+  let emailTemplates = {};
+  let currentEmailTmplKey = '受付';
+
+  const EMAIL_TMPL_DESCS = {
+    '受付':     'WEBフォームから予約リクエストが送信されたとき、お客様へ自動送信されます。',
+    '確定':     '管理画面で「確定」ボタンを押したとき、お客様へ自動送信されます。',
+    '不可':     '管理画面で「不可」ボタンを押したとき、お客様へ自動送信されます。',
+    'リマインド': '撮影日の3日前にGASトリガーによって自動送信されます。',
+  };
+
+  function loadEmailTemplates() {
+    if (Object.keys(emailTemplates).length > 0) {
+      renderEmailTemplate(currentEmailTmplKey);
+      return;
+    }
+    const cb = 'cb_etmpl_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      if (json.status === 'success') {
+        emailTemplates = json.data;
+        renderEmailTemplate(currentEmailTmplKey);
+      }
+    };
+    s.src = GAS_URL + '?action=getEmailTemplates&callback=' + cb;
+    s.onerror = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; };
+    document.body.appendChild(s);
+  }
+
+  function switchEmailTab(key, el) {
+    currentEmailTmplKey = key;
+    document.querySelectorAll('.email-tmpl-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderEmailTemplate(key);
+  }
+
+  function renderEmailTemplate(key) {
+    const tmpl = emailTemplates[key] || { subject: '', body: '' };
+    document.getElementById('emailTmplKey').value = key;
+    document.getElementById('emailTmplSubject').value = tmpl.subject || '';
+    document.getElementById('emailTmplBody').value = tmpl.body || '';
+    document.getElementById('emailTmplDesc').textContent = EMAIL_TMPL_DESCS[key] || '';
+  }
+
+  async function saveEmailTemplate() {
+    const key = document.getElementById('emailTmplKey').value;
+    const subject = document.getElementById('emailTmplSubject').value.trim();
+    const body = document.getElementById('emailTmplBody').value.trim();
+    if (!subject) { alert('件名を入力してください。'); return; }
+    if (!body) { alert('本文を入力してください。'); return; }
+    showLoading('保存しています...');
+    try {
+      const params = { key, subject, body };
+      const encoded = encodeURIComponent(JSON.stringify(params));
+      const cb = 'cb_etmpl_save_' + Date.now();
+      const json = await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        const timer = setTimeout(() => { reject(new Error('タイムアウト')); }, 10000);
+        window[cb] = (data) => { clearTimeout(timer); if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; resolve(data); };
+        s.src = GAS_URL + '?action=saveEmailTemplate&params=' + encoded + '&callback=' + cb;
+        s.onerror = () => { clearTimeout(timer); reject(new Error('通信エラー')); };
+        document.body.appendChild(s);
+      });
+      hideLoading();
+      if (json.status === 'success') {
+        emailTemplates[key] = { subject, body };
+        alert('✅ ' + key + 'メールのテンプレートを保存しました。');
+      } else {
+        alert('エラー: ' + (json.message || '不明'));
+      }
+    } catch(e) {
+      hideLoading();
+      alert('通信エラーが発生しました。');
+    }
   }
 
   // ==========================================
