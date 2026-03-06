@@ -335,9 +335,12 @@
 
   <!-- タブ -->
   <div style="display:flex;border-bottom:1px solid #eee;background:#fff;">
-    <button class="member-tab active" id="mtab1" onclick="switchMemberTab('card',this)" style="flex:1;padding:12px;border:none;background:none;font-size:12px;color:#68c0d3;font-weight:600;border-bottom:2px solid #68c0d3;cursor:pointer;">会員証</button>
-    <button class="member-tab" id="mtab2" onclick="switchMemberTab('coupon',this)" style="flex:1;padding:12px;border:none;background:none;font-size:12px;color:#bbb;cursor:pointer;">クーポン</button>
-    <button class="member-tab" id="mtab3" onclick="switchMemberTab('referral',this)" style="flex:1;padding:12px;border:none;background:none;font-size:12px;color:#bbb;cursor:pointer;">友達紹介</button>
+    <button class="member-tab active" id="mtab1" onclick="switchMemberTab('card',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#68c0d3;font-weight:600;border-bottom:2px solid #68c0d3;cursor:pointer;">会員証</button>
+    <button class="member-tab" id="mtab2" onclick="switchMemberTab('coupon',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">クーポン</button>
+    <button class="member-tab" id="mtab3" onclick="switchMemberTab('referral',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">友達紹介</button>
+    <button class="member-tab" id="mtab5" onclick="switchMemberTab('bookings',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">📋 予約</button>
+    <button class="member-tab" id="mtab6" onclick="switchMemberTab('photos',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">📁 データ</button>
+    <button class="member-tab" id="mtab4" onclick="switchMemberTab('guide',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">ガイド</button>
   </div>
 
   <div style="padding:16px;">
@@ -350,6 +353,18 @@
 
     <!-- クーポンタブ -->
     <div id="memberTabCoupon" class="member-screen">
+      <!-- ポイント交換 -->
+      <div id="pointRedeemPanel" style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border:1px solid #b8e3ec;border-radius:14px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">💫 ポイントをクーポンに交換</div>
+        <div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.7;">
+          500ptで<strong style="color:#68c0d3;">500円割引クーポン</strong>（有効期限90日）に交換できます。
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;color:#888;">現在のポイント</span>
+          <span id="redeemCurrentPt" style="font-size:18px;font-weight:700;color:#68c0d3;">--- pt</span>
+        </div>
+        <button onclick="redeemPointCoupon()" style="width:100%;padding:11px;background:#68c0d3;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">500ptで交換する</button>
+      </div>
       <div class="section-title" style="margin-bottom:12px;">利用可能なクーポン</div>
       <div id="memberCouponList">
         <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
@@ -365,10 +380,244 @@
       </div>
       <div style="background:#f8f8f8;border-radius:12px;padding:14px;font-size:12px;color:#888;line-height:1.8;">
         <strong style="color:#555;">友達紹介のしくみ</strong><br>
-        あなたの紹介コードで友達が会員登録すると、<strong style="color:#68c0d3;">${CONFIG.REFERRAL_POINT}pt</strong> がプレゼントされます！<br>
+        あなたの紹介コードで友達が会員登録すると、<strong style="color:#68c0d3;">500pt（500円分）</strong> がプレゼントされます！<br>
         紹介できる人数に上限はありません。
       </div>
     </div>
+
+    <!-- フォトデータタブ -->
+    <div id="memberTabPhotos" class="member-screen">
+      <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:4px;">📁 フォトデータ</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:16px;line-height:1.7;">撮影データが準備できるとここに表示されます。</div>
+      <div id="photoDataList">
+        <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- 注文モーダル（フォトアイテム） -->
+    <div id="orderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;overflow-y:auto;">
+      <div style="background:#f8f9fa;border-radius:20px 20px 0 0;padding:20px 16px 40px;margin-top:60px;min-height:calc(100vh - 60px);">
+        <!-- ヘッダー -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:15px;font-weight:700;color:#333;">🛍 フォトアイテムを注文</div>
+          <button onclick="closeOrderModal()" style="background:none;border:none;font-size:22px;color:#aaa;cursor:pointer;">✕</button>
+        </div>
+
+        <!-- STEP1: 写真選択 -->
+        <div id="orderStep1">
+          <div style="font-size:12px;font-weight:600;color:#68c0d3;margin-bottom:10px;">STEP 1　注文したい写真を選んでください（複数可）</div>
+          <div id="thumbGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;"></div>
+          <div id="noThumbMsg" style="display:none;text-align:center;padding:30px;color:#bbb;font-size:13px;">
+            <div style="font-size:28px;margin-bottom:8px;">📷</div>
+            写真が登録されていません
+          </div>
+          <button onclick="goOrderStep2()" style="width:100%;padding:13px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">次へ →</button>
+        </div>
+
+        <!-- STEP2: 商品選択 -->
+        <div id="orderStep2" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <button onclick="backOrderStep1()" style="background:none;border:none;color:#68c0d3;font-size:14px;cursor:pointer;">← 戻る</button>
+            <div style="font-size:12px;font-weight:600;color:#68c0d3;">STEP 2　商品を選んでください</div>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px;">選択した写真：<span id="selectedPhotoNums" style="color:#68c0d3;font-weight:600;"></span></div>
+          <div id="shopItemGrid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+          <button onclick="goOrderStep3()" style="width:100%;padding:13px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">次へ →</button>
+        </div>
+
+        <!-- STEP3: 確認・受け取り方法 -->
+        <div id="orderStep3" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <button onclick="backOrderStep2()" style="background:none;border:none;color:#68c0d3;font-size:14px;cursor:pointer;">← 戻る</button>
+            <div style="font-size:12px;font-weight:600;color:#68c0d3;">STEP 3　受け取り方法・確認</div>
+          </div>
+
+          <!-- 注文内容サマリー -->
+          <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:10px;">📋 注文内容</div>
+            <div id="orderSummary" style="font-size:12px;color:#555;line-height:2;"></div>
+            <div style="border-top:1px solid #f0f0f0;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;">
+              <span style="font-size:13px;color:#444;font-weight:600;">合計</span>
+              <div style="text-align:right;">
+                <div id="orderTotalOrig" style="font-size:11px;color:#aaa;text-decoration:line-through;"></div>
+                <div id="orderTotal" style="font-size:18px;font-weight:700;color:#68c0d3;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 受け取り方法 -->
+          <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:10px;">📦 受け取り方法</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <button id="delBtn_store" onclick="selectDelivery('店頭受け取り')"
+                style="flex:1;padding:10px;border:2px solid #68c0d3;border-radius:10px;background:#f0fafb;color:#4a9db0;font-size:12px;font-weight:600;cursor:pointer;">
+                🏠 店頭受け取り
+              </button>
+              <button id="delBtn_mail" onclick="selectDelivery('郵送')"
+                style="flex:1;padding:10px;border:2px solid #ddd;border-radius:10px;background:#fff;color:#aaa;font-size:12px;cursor:pointer;">
+                📮 郵送
+              </button>
+            </div>
+            <div id="addressField" style="display:none;">
+              <textarea id="orderAddress" placeholder="郵便番号・住所・お名前を入力してください" rows="3"
+                style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;box-sizing:border-box;resize:none;"></textarea>
+            </div>
+          </div>
+
+          <!-- 備考 -->
+          <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:8px;">📝 備考（任意）</div>
+            <textarea id="orderNote" placeholder="仕上がりの希望など" rows="2"
+              style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;box-sizing:border-box;resize:none;"></textarea>
+          </div>
+
+          <button onclick="proceedToSquare()" style="width:100%;padding:14px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">
+            💳 Square で決済する
+          </button>
+          <div style="font-size:10px;color:#bbb;text-align:center;margin-top:8px;">Squareの決済ページに移動します</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 撮影予約タブ -->
+    <div id="memberTabBookings" class="member-screen">
+      <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:4px;">📋 撮影予約</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:16px;line-height:1.7;">ご予約の確認・撮影資料・データ受け取りはこちらから。</div>
+      <div id="bookingList">
+        <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- ガイドタブ -->
+    <div id="memberTabGuide" class="member-screen">
+
+      <!-- ポイントのしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">⭐</span> ポイントのしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;">
+          撮影ご利用ごとにポイントが貯まります。<br>
+          貯まったポイントは <strong style="color:#68c0d3;">1pt = 1円</strong> として、クーポンに交換してご利用いただけます。
+        </div>
+        <div style="background:#f8fcfd;border-radius:10px;padding:12px;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:12px;">
+            <span style="color:#666;">📷 撮影ご利用</span>
+            <span style="font-weight:700;color:#68c0d3;">＋ポイント付与</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:12px;">
+            <span style="color:#666;">👫 友達紹介（紹介した方）</span>
+            <span style="font-weight:700;color:#68c0d3;">＋500pt</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:12px;">
+            <span style="color:#666;">🎉 友達紹介（紹介された方）</span>
+            <span style="font-weight:700;color:#68c0d3;">＋500pt</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ポイント交換のしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">💫</span> ポイント交換のしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;margin-bottom:10px;">
+          500ptが貯まったら、500円割引クーポンに交換できます。<br>
+          交換は「クーポン」タブから行えます。
+        </div>
+        <div style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:center;gap:12px;">
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#68c0d3;">500pt</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px;">貯める</div>
+          </div>
+          <div style="font-size:18px;color:#b0d8e3;">→</div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#e07a9a;">500円OFF</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px;">クーポン（90日有効）</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#bbb;margin-top:10px;text-align:center;">
+          500ptを超えて貯めてから交換することもできます
+        </div>
+      </div>
+
+      <!-- ランクのしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">🏅</span> ランクのしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:1.8;margin-bottom:12px;">
+          撮影回数に応じてランクアップ！ランクが上がるほど特典が充実します。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;background:#f8f8f8;border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">🤍</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#888;">REGULAR</div>
+              <div style="font-size:11px;color:#bbb;">登録〜1回</div>
+            </div>
+            <div style="font-size:11px;color:#bbb;text-align:right;">—</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f4f4f4,#ebebeb);border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">🥈</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#777;">SILVER</div>
+              <div style="font-size:11px;color:#bbb;">撮影2回〜</div>
+            </div>
+            <div style="font-size:11px;color:#999;text-align:right;">優先予約</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#fdf5e4,#fae8c0);border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">🥇</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#c9a84c;">GOLD</div>
+              <div style="font-size:11px;color:#bbb;">撮影5回〜</div>
+            </div>
+            <div style="font-size:11px;color:#c9a84c;text-align:right;">優先予約<br>データ延長保管</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f0f4ff,#dce6ff);border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">💎</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#6a7fc8;">PLATINUM</div>
+              <div style="font-size:11px;color:#bbb;">撮影10回〜</div>
+            </div>
+            <div style="font-size:11px;color:#6a7fc8;text-align:right;">優先予約<br>データ延長保管<br>特別割引クーポン</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 誕生日クーポン -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">🎂</span> 誕生日クーポン
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;">
+          お誕生日当日に特別クーポンをLINEでお届けします🎁<br>
+          クーポンは「クーポン」タブからご確認ください。<br>
+          ご利用の際はご予約時またはスタッフにお申し出ください。
+        </div>
+      </div>
+
+      <!-- 友達紹介のしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">👫</span> 友達紹介のしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;">
+          「友達紹介」タブにある紹介コードを友達に送ってください。<br>
+          友達が紹介コードを入力して会員登録すると、<strong style="color:#68c0d3;">あなたにも友達にも500pt</strong>プレゼント！<br>
+          紹介できる人数に上限はありません。
+        </div>
+      </div>
+
+      <!-- お問い合わせ -->
+      <div style="background:#f8fcfd;border-radius:12px;padding:16px;font-size:11px;color:#aaa;text-align:center;line-height:2;">
+        ポイント・クーポンについてご不明な点は<br>
+        LINEメッセージよりお気軽にお問い合わせください 📩<br>
+        <span style="color:#68c0d3;font-weight:600;">studio TSUZURI</span>
+      </div>
+
+    </div><!-- /memberTabGuide -->
   </div>
 </div>
 <!-- 時間枠シート -->
@@ -382,8 +631,8 @@
 </div>
 
 <script>
-  const GAS_URL = 'ここにGASのURLを入力';
-  const LIFF_ID = 'ここにLIFF IDを入力';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxn4C3CA9LMiexP5dHL3-_3ixpIfnbLgU1kisdxuzM3TaIPmMk_uhCSigXPNhJ6jEg/exec';
+  const LIFF_ID = '2009277586-pDtkyCOn';
 
   const HOLIDAYS = [
     '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
@@ -847,6 +1096,14 @@
     document.getElementById('memberPage').style.display = 'none';
   }
 
+  function getCountdownInfo(remainDays) {
+    if (remainDays === null) return { color:'#aaa', bg:'#f5f5f5', urgent:false };
+    if (remainDays <= 0)  return { color:'#bbb', bg:'#f5f5f5', urgent:false, expired:true };
+    if (remainDays <= 7)  return { color:'#e53935', bg:'#fff5f5', urgent:true };
+    if (remainDays <= 30) return { color:'#f57c00', bg:'#fff8f0', urgent:false };
+    return { color:'#43a047', bg:'#f0faf1', urgent:false };
+  }
+
   function switchMemberTab(tab, el) {
     document.querySelectorAll('.member-tab').forEach(b => {
       b.style.color = '#bbb'; b.style.borderBottom = 'none'; b.style.fontWeight = '400';
@@ -856,6 +1113,502 @@
     document.getElementById('memberTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
     if (tab === 'coupon') loadMemberCoupons();
     if (tab === 'referral') loadReferralCode();
+    if (tab === 'bookings') loadMyBookings();
+    if (tab === 'photos') loadMyPhotos();
+  }
+
+  // ==========================================
+  // 撮影予約タブ
+  // ==========================================
+  function loadMyBookings() {
+    if (!lineProfile) return;
+    const list = document.getElementById('bookingList');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>';
+    const cb = 'cb_bookings_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      renderMyBookings(json.data || []);
+    };
+    s.src = GAS_URL + '?action=getMyBookings&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderMyBookings(bookings) {
+    const list = document.getElementById('bookingList');
+    if (!list) return;
+    if (bookings.length === 0) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:40px;">
+          <div style="font-size:36px;margin-bottom:12px;">📋</div>
+          <div style="font-size:13px;color:#bbb;line-height:1.8;">予約はまだありません。</div>
+        </div>`;
+      return;
+    }
+
+    const STATUS_STYLE = {
+      '仮押さえ': { bg:'#fff8e1', color:'#f9a825', label:'仮押さえ' },
+      '確定':     { bg:'#e8f5e9', color:'#43a047', label:'確定' },
+      '不可':     { bg:'#fce4ec', color:'#e53935', label:'不可' },
+    };
+    const PROGRESS_STYLE = {
+      '予約受付': { bg:'#f0f4ff', color:'#5070b0' },
+      '撮影待ち': { bg:'#fff8e1', color:'#f9a825' },
+      '撮影済み': { bg:'#e8f5ff', color:'#2196f3' },
+      '編集中':   { bg:'#fce4f8', color:'#9c27b0' },
+      '納品完了': { bg:'#e8f5e9', color:'#43a047' },
+    };
+    const DOC_ICONS = { schedule:'🕐', estimate:'💴', checklist:'✅', notes:'📝' };
+
+    list.innerHTML = bookings.map((b, idx) => {
+      const st = STATUS_STYLE[b.status] || { bg:'#f5f5f5', color:'#aaa', label: b.status };
+      const pg = PROGRESS_STYLE[b.progress] || { bg:'#f5f5f5', color:'#aaa' };
+      const isOpen = idx === 0; // 最新1件だけ最初から展開
+
+      // 撮影資料
+      let docsSection = '';
+      if (b.docs && b.docs.length > 0) {
+        docsSection = `
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px;">
+            <div style="font-size:11px;font-weight:600;color:#68c0d3;margin-bottom:8px;">🗂 撮影資料</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${b.docs.map(d => `
+                <div>
+                  <div style="font-size:11px;color:#888;margin-bottom:5px;">${DOC_ICONS[d.docType] || '📄'} ${d.docLabel}</div>
+                  <img src="${d.imageBase64}" alt="${d.docLabel}"
+                    style="width:100%;border-radius:10px;border:1px solid #eee;display:block;cursor:pointer;"
+                    onclick="openDocViewer(this.src,'${d.docLabel}')">
+                  <div style="font-size:10px;color:#ccc;text-align:right;margin-top:3px;">更新：${d.uploadedAt}</div>
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      return `
+      <div style="background:#fff;border:1.5px solid #eee;border-radius:14px;margin-bottom:12px;overflow:hidden;">
+        <!-- ヘッダー（タップで展開） -->
+        <div onclick="toggleBooking('booking_${b.id}')"
+          style="display:flex;justify-content:space-between;align-items:center;padding:14px;cursor:pointer;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              📅 ${b.date}　${b.timeSlot}〜
+            </div>
+            <div style="font-size:11px;color:#aaa;margin-top:2px;">${b.menu || ''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <span style="font-size:10px;background:${st.bg};color:${st.color};padding:3px 8px;border-radius:12px;font-weight:600;">${st.label}</span>
+            ${b.progress && b.status === '確定' ? `<span style="font-size:10px;background:${pg.bg};color:${pg.color};padding:3px 8px;border-radius:12px;font-weight:600;">${b.progress}</span>` : ''}
+            <span id="arrow_booking_${b.id}" style="color:#ccc;font-size:14px;transition:transform 0.2s;">${isOpen ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        <!-- 展開エリア -->
+        <div id="booking_${b.id}" style="display:${isOpen ? 'block' : 'none'};padding:0 14px 14px;border-top:1px solid #f5f5f5;">
+          <div style="font-size:11px;color:#aaa;padding:10px 0 8px;line-height:1.8;">
+            <span>👤 ${b.count ? b.count + '名' : '—'}</span>　
+            <span>📌 ${b.menu || '—'}</span>
+          </div>
+          ${docsSection}
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px;">
+            <div style="font-size:11px;font-weight:600;color:#68c0d3;margin-bottom:8px;">🗂 撮影資料</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              ${['🕐 タイムスケジュール','💴 お見積もり','✅ 持ち物リスト','📝 注意事項・当日の流れ'].map(lbl => \`
+              <div>
+                <div style="font-size:11px;color:#888;margin-bottom:4px;">\${lbl}</div>
+                <div style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border:1.5px dashed #b8e3ec;border-radius:10px;padding:18px;text-align:center;">
+                  <div style="font-size:12px;color:#8cc8d8;font-weight:600;">確定後に表示されます</div>
+                </div>
+              </div>\`).join('')}
+            </div>
+          </div>
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:12px;">
+            <div style="font-size:11px;font-weight:600;color:#68c0d3;margin-bottom:8px;">📁 フォトデータ</div>
+            <div style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border:1.5px dashed #b8e3ec;border-radius:10px;padding:24px;text-align:center;">
+              <div style="font-size:20px;margin-bottom:6px;">📁</div>
+              <div style="font-size:12px;color:#8cc8d8;font-weight:600;">データ納品後に表示されます</div>
+            </div>
+          </div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleBooking(id) {
+    const el = document.getElementById(id);
+    const arrow = document.getElementById('arrow_' + id);
+    if (!el) return;
+    const isOpen = el.style.display !== 'none';
+    el.style.display = isOpen ? 'none' : 'block';
+    if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+  }
+
+  // ==========================================
+  // フォトデータタブ
+  // ==========================================
+  function loadMyPhotos() {
+    if (!lineProfile) return;
+    const list = document.getElementById('photoDataList');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>';
+    const cb = 'cb_photos_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      renderMyPhotos(json.data || []);
+    };
+    s.src = GAS_URL + '?action=getMyPhotos&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderMyPhotos(photos) {
+    const list = document.getElementById('photoDataList');
+    if (!list) return;
+    if (photos.length === 0) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:40px;">
+          <div style="font-size:36px;margin-bottom:12px;">📷</div>
+          <div style="font-size:13px;color:#bbb;line-height:1.8;">まだフォトデータはありません。<br>撮影後にここに表示されます。</div>
+        </div>`;
+      return;
+    }
+    list.innerHTML = photos.map(p => {
+      const cd = getCountdownInfo(p.remainDays);
+      const expired = cd.expired || false;
+      const barPct = expired ? 0 : Math.min(100, Math.round((p.remainDays / 60) * 100));
+      return `
+      <div style="background:#fff;border:1.5px solid ${expired ? '#eee' : cd.color + '44'};border-radius:14px;padding:14px;margin-bottom:12px;${cd.urgent ? 'box-shadow:0 0 0 2px ' + cd.color + '33;' : ''}">
+        <div style="margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:600;color:#444;">📅 ${p.date}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:2px;">${p.menu || ''}</div>
+        </div>
+        <div style="background:${expired ? '#f5f5f5' : cd.bg};border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:11px;color:${expired ? '#bbb' : cd.color};font-weight:600;">
+              ${expired ? '⛔ ダウンロード期限切れ' : 'ダウンロード期限'}
+            </span>
+            <span style="font-size:11px;color:#aaa;">${p.expireDate || ''} まで</span>
+          </div>
+          <div style="background:${expired ? '#e0e0e0' : cd.color + '33'};border-radius:6px;height:7px;overflow:hidden;margin-bottom:8px;">
+            <div style="height:100%;border-radius:6px;background:${cd.color};width:${barPct}%;"></div>
+          </div>
+          ${!expired ? `
+          <div style="text-align:center;">
+            <span style="font-size:18px;font-weight:700;color:${cd.color};">残り</span>
+            <span style="font-size:28px;font-weight:800;color:${cd.color};margin:0 2px;">${p.remainDays}</span>
+            <span style="font-size:18px;font-weight:700;color:${cd.color};">日</span>
+          </div>
+          ${cd.urgent ? `<div style="font-size:11px;color:${cd.color};font-weight:600;margin-top:5px;text-align:center;">⚠️ お早めにダウンロードしてください</div>` : ''}
+          ` : ''}
+        </div>
+        ${expired
+          ? `<div style="padding:12px;background:#f5f5f5;color:#bbb;border-radius:10px;font-size:13px;font-weight:600;text-align:center;">受け取り期限が終了しました</div>`
+          : `<a href="${p.driveUrl}" target="_blank"
+              style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border-radius:10px;font-size:13px;font-weight:600;text-align:center;text-decoration:none;">
+              📁 フォトデータを受け取る
+            </a>
+            <div style="font-size:10px;color:#bbb;text-align:center;margin-top:6px;">タップするとGoogleドライブが開きます</div>
+            <button onclick="openOrderModal('${p.reservationId}','${p.date}','${p.menu||''}')"
+              style="width:100%;margin-top:8px;padding:12px;background:#fff;border:2px solid #68c0d3;border-radius:10px;font-size:13px;font-weight:600;color:#4a9db0;cursor:pointer;">
+              🛍 フォトアイテムを注文する
+            </button>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  // ==========================================
+  // 注文フロー
+  // ==========================================
+  let orderState = {
+    reservationId: '', date: '', menu: '',
+    selectedPhotos: [],   // [{no, url}]
+    selectedItems: [],    // [{itemId, name, size, price, squareUrl, qty}]
+    delivery: '店頭受け取り',
+    shopItems: [],
+    memberRank: 'REGULAR',
+    discountRate: 0,
+  };
+
+  function openOrderModal(reservationId, date, menu) {
+    orderState.reservationId = reservationId;
+    orderState.date = date;
+    orderState.menu = menu;
+    orderState.selectedPhotos = [];
+    orderState.selectedItems = [];
+    orderState.delivery = '店頭受け取り';
+
+    document.getElementById('orderModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+
+    // STEP1表示
+    showOrderStep(1);
+
+    // サムネとショップ商品を並行取得
+    loadOrderThumbs(reservationId);
+    loadShopItemsForOrder();
+  }
+
+  function closeOrderModal() {
+    document.getElementById('orderModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function showOrderStep(step) {
+    [1,2,3].forEach(n => {
+      const el = document.getElementById('orderStep' + n);
+      if (el) el.style.display = n === step ? 'block' : 'none';
+    });
+  }
+
+  function loadOrderThumbs(reservationId) {
+    const grid = document.getElementById('thumbGrid');
+    const noMsg = document.getElementById('noThumbMsg');
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#bbb;font-size:12px;">読み込み中...</div>';
+    const cb = 'cb_thumbs_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      const thumbs = (json.data && json.data.thumbs) || [];
+      if (thumbs.length === 0) {
+        if (grid) grid.innerHTML = '';
+        if (noMsg) noMsg.style.display = 'block';
+      } else {
+        if (noMsg) noMsg.style.display = 'none';
+        renderThumbGrid(thumbs);
+      }
+    };
+    s.src = GAS_URL + '?action=getPhotoThumbs&reservationId=' + encodeURIComponent(reservationId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderThumbGrid(thumbs) {
+    const grid = document.getElementById('thumbGrid');
+    if (!grid) return;
+    grid.innerHTML = thumbs.map(t => `
+      <div id="thumb_${t.no}" onclick="toggleThumbSelect(${t.no},'${t.url}')"
+        style="position:relative;border-radius:10px;overflow:hidden;border:3px solid transparent;cursor:pointer;aspect-ratio:1;background:#f0f0f0;">
+        <img src="${convertDriveUrl(t.url)}" alt="No.${t.no}"
+          style="width:100%;height:100%;object-fit:cover;"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:#f0fafb;font-size:11px;color:#aaa;">No.${t.no}</div>
+        <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;padding:2px 5px;border-radius:6px;">No.${t.no}</div>
+        <div id="thumbCheck_${t.no}" style="display:none;position:absolute;inset:0;background:rgba(104,192,211,0.4);align-items:center;justify-content:center;">
+          <div style="background:#68c0d3;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;">✓</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function convertDriveUrl(url) {
+    // GoogleDriveの共有URLを直接表示用URLに変換
+    const m = url.match(/\/file\/d\/([^/]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w300';
+    return url;
+  }
+
+  function toggleThumbSelect(no, url) {
+    const idx = orderState.selectedPhotos.findIndex(p => p.no === no);
+    const checkEl = document.getElementById('thumbCheck_' + no);
+    const thumbEl = document.getElementById('thumb_' + no);
+    if (idx >= 0) {
+      orderState.selectedPhotos.splice(idx, 1);
+      if (checkEl) checkEl.style.display = 'none';
+      if (thumbEl) thumbEl.style.borderColor = 'transparent';
+    } else {
+      orderState.selectedPhotos.push({ no, url });
+      if (checkEl) checkEl.style.display = 'flex';
+      if (thumbEl) thumbEl.style.borderColor = '#68c0d3';
+    }
+  }
+
+  function goOrderStep2() {
+    if (orderState.selectedPhotos.length === 0) {
+      alert('写真を1枚以上選択してください');
+      return;
+    }
+    const nums = orderState.selectedPhotos.map(p => 'No.' + p.no).join('・');
+    document.getElementById('selectedPhotoNums').textContent = nums;
+    showOrderStep(2);
+    if (orderState.shopItems.length > 0) renderShopItemGrid();
+  }
+
+  function backOrderStep1() { showOrderStep(1); }
+
+  function loadShopItemsForOrder() {
+    if (orderState.shopItems.length > 0) return;
+    const cb = 'cb_shopord_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      orderState.shopItems = json.data || [];
+    };
+    s.src = GAS_URL + '?action=getShopItems&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  const CAT_ICONS = { print:'🖼', album:'📔', canvas:'🎨', acrylic:'💎', other:'📦' };
+
+  function renderShopItemGrid() {
+    const grid = document.getElementById('shopItemGrid');
+    if (!grid) return;
+    if (orderState.shopItems.length === 0) {
+      grid.innerHTML = '<div style="text-align:center;color:#bbb;padding:30px;font-size:13px;">商品が登録されていません</div>';
+      return;
+    }
+    grid.innerHTML = orderState.shopItems.map(item => `
+      <div style="background:#fff;border-radius:12px;padding:14px;">
+        <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
+          ${CAT_ICONS[item.category] || '📦'} ${item.name}
+        </div>
+        ${item.description ? `<div style="font-size:11px;color:#aaa;margin-bottom:10px;">${item.description}</div>` : ''}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${(item.sizes || []).map(sz => {
+            const key = item.id + '_' + sz.label;
+            return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8f9fa;border-radius:8px;">
+              <div>
+                <span style="font-size:12px;font-weight:600;color:#444;">${sz.label}</span>
+                <span style="font-size:12px;color:#68c0d3;font-weight:700;margin-left:8px;">¥${Number(sz.price).toLocaleString()}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button onclick="changeQty('${key}','${item.id}','${item.name}','${sz.label}',${sz.price},'${sz.squareUrl||''}', -1)"
+                  style="width:28px;height:28px;border-radius:50%;border:1.5px solid #ddd;background:#fff;font-size:16px;cursor:pointer;color:#666;">−</button>
+                <span id="qty_${key}" style="font-size:14px;font-weight:600;color:#333;min-width:20px;text-align:center;">0</span>
+                <button onclick="changeQty('${key}','${item.id}','${item.name}','${sz.label}',${sz.price},'${sz.squareUrl||''}', 1)"
+                  style="width:28px;height:28px;border-radius:50%;border:1.5px solid #68c0d3;background:#f0fafb;font-size:16px;cursor:pointer;color:#4a9db0;">＋</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  function changeQty(key, itemId, name, size, price, squareUrl, delta) {
+    const qtyEl = document.getElementById('qty_' + key);
+    const cur = orderState.selectedItems.findIndex(x => x.key === key);
+    if (cur >= 0) {
+      orderState.selectedItems[cur].qty = Math.max(0, orderState.selectedItems[cur].qty + delta);
+      if (orderState.selectedItems[cur].qty === 0) orderState.selectedItems.splice(cur, 1);
+    } else if (delta > 0) {
+      orderState.selectedItems.push({ key, itemId, name, size, price: Number(price), squareUrl, qty: 1 });
+    }
+    const item = orderState.selectedItems.find(x => x.key === key);
+    if (qtyEl) qtyEl.textContent = item ? item.qty : 0;
+  }
+
+  function goOrderStep3() {
+    if (orderState.selectedItems.length === 0) {
+      alert('商品を1つ以上選択してください');
+      return;
+    }
+    renderOrderSummary();
+    showOrderStep(3);
+    selectDelivery('店頭受け取り');
+  }
+
+  function backOrderStep2() { showOrderStep(2); }
+
+  function renderOrderSummary() {
+    const summaryEl = document.getElementById('orderSummary');
+    const totalEl = document.getElementById('orderTotal');
+    const totalOrigEl = document.getElementById('orderTotalOrig');
+    const photoNums = orderState.selectedPhotos.map(p => 'No.' + p.no).join('・');
+    let total = 0;
+    const lines = orderState.selectedItems.map(it => {
+      const sub = it.price * it.qty;
+      total += sub;
+      return `${it.name} ${it.size} × ${it.qty}枚　¥${sub.toLocaleString()}`;
+    });
+    lines.unshift('📷 写真：' + photoNums);
+    if (summaryEl) summaryEl.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+
+    // 割引計算（memberDataから取得）
+    const rank = memberData && memberData.rank ? memberData.rank : 'REGULAR';
+    const discountMap = { REGULAR: 0, SILVER: 5, GOLD: 10, PLATINUM: 15 };
+    const rate = discountMap[rank] || 0;
+    orderState.discountRate = rate;
+    const discounted = Math.floor(total * (1 - rate / 100));
+
+    if (rate > 0) {
+      if (totalOrigEl) { totalOrigEl.textContent = '¥' + total.toLocaleString(); totalOrigEl.style.display = 'block'; }
+      if (totalEl) totalEl.textContent = '¥' + discounted.toLocaleString() + '（' + rank + ' ' + rate + '%割引）';
+    } else {
+      if (totalOrigEl) totalOrigEl.style.display = 'none';
+      if (totalEl) totalEl.textContent = '¥' + total.toLocaleString();
+    }
+    orderState._total = total;
+    orderState._discounted = discounted;
+  }
+
+  function selectDelivery(type) {
+    orderState.delivery = type;
+    const storeBtn = document.getElementById('delBtn_store');
+    const mailBtn = document.getElementById('delBtn_mail');
+    const addrField = document.getElementById('addressField');
+    if (type === '店頭受け取り') {
+      if (storeBtn) { storeBtn.style.borderColor = '#68c0d3'; storeBtn.style.background = '#f0fafb'; storeBtn.style.color = '#4a9db0'; storeBtn.style.fontWeight = '600'; }
+      if (mailBtn) { mailBtn.style.borderColor = '#ddd'; mailBtn.style.background = '#fff'; mailBtn.style.color = '#aaa'; mailBtn.style.fontWeight = 'normal'; }
+      if (addrField) addrField.style.display = 'none';
+    } else {
+      if (mailBtn) { mailBtn.style.borderColor = '#68c0d3'; mailBtn.style.background = '#f0fafb'; mailBtn.style.color = '#4a9db0'; mailBtn.style.fontWeight = '600'; }
+      if (storeBtn) { storeBtn.style.borderColor = '#ddd'; storeBtn.style.background = '#fff'; storeBtn.style.color = '#aaa'; storeBtn.style.fontWeight = 'normal'; }
+      if (addrField) addrField.style.display = 'block';
+    }
+  }
+
+  async function proceedToSquare() {
+    if (orderState.delivery === '郵送') {
+      const addr = document.getElementById('orderAddress').value.trim();
+      if (!addr) { alert('配送先住所を入力してください'); return; }
+    }
+
+    // 複数商品の場合は最初のSquare URLを使用、複数URLは備考に含める
+    const mainItem = orderState.selectedItems[0];
+    if (!mainItem || !mainItem.squareUrl) {
+      alert('Square決済URLが設定されていません。店舗にお問い合わせください。');
+      return;
+    }
+
+    // 注文データをGASに保存
+    try {
+      const items = orderState.selectedItems.map(it => ({ name: it.name, size: it.size, price: it.price, qty: it.qty }));
+      const photoIndexes = orderState.selectedPhotos.map(p => p.no);
+      const addr = orderState.delivery === '郵送' ? (document.getElementById('orderAddress').value.trim()) : '';
+      const note = document.getElementById('orderNote').value.trim();
+
+      await gasPost('createOrder', {
+        lineUserId: lineProfile ? lineProfile.userId : '',
+        memberName: memberData ? (memberData.name || '') : '',
+        reservationId: orderState.reservationId,
+        items, photoIndexes,
+        delivery: orderState.delivery,
+        address: addr,
+        totalPrice: orderState._total,
+        note,
+      });
+    } catch(e) { console.log('注文保存エラー:', e); }
+
+    // Square決済ページへ
+    const url = mainItem.squareUrl;
+    closeOrderModal();
+    window.open(url, '_blank');
+  }
+
+  // 画像タップでフルスクリーン表示
+  function openDocViewer(src, label) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+    overlay.innerHTML = `
+      <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="color:#fff;font-size:13px;font-weight:600;">${label}</span>
+        <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:4px;">✕</button>
+      </div>
+      <img src="${src}" style="max-width:100%;max-height:80vh;border-radius:10px;object-fit:contain;">
+      <div style="color:#aaa;font-size:11px;margin-top:12px;">ピンチで拡大できます</div>`;
+    document.body.appendChild(overlay);
   }
 
   function loadMemberCard() {
@@ -926,17 +1679,36 @@
       </div>
 
       <div style="background:#fff;border-radius:14px;padding:14px;font-size:12px;color:#888;line-height:2;">
-        <div style="font-size:13px;font-weight:600;color:#444;margin-bottom:8px;">ランク特典</div>
-        <div>🥉 ノーマル：なし</div>
-        <div>🥈 シルバー（2回〜）：優先予約</div>
-        <div>🥇 ゴールド（5回〜）：撮影データ延長保管</div>
-        <div>💎 プラチナ（10回〜）：特別割引クーポン</div>
+        <div style="font-size:13px;font-weight:600;color:#444;margin-bottom:10px;">ランク特典</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">🤍</span>
+            <div><span style="font-weight:600;color:#888;">ノーマル</span>　— </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">🥈</span>
+            <div><span style="font-weight:600;color:#777;">シルバー</span>（2回〜）　優先予約</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">🥇</span>
+            <div><span style="font-weight:600;color:#c9a84c;">ゴールド</span>（5回〜）　優先予約 ＋ 撮影データ延長保管</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">💎</span>
+            <div><span style="font-weight:600;color:#6a7fc8;">プラチナ</span>（10回〜）　優先予約 ＋ データ延長保管 ＋ 特別割引クーポン</div>
+          </div>
+        </div>
       </div>
     `;
   }
 
   function loadMemberCoupons() {
     if (!lineProfile) return;
+    // ポイント交換パネルの現在ポイント表示更新
+    if (memberData) {
+      const ptEl = document.getElementById('redeemCurrentPt');
+      if (ptEl) ptEl.textContent = (memberData.points || 0) + ' pt';
+    }
     const cb = 'cb_coup_' + Date.now();
     const s = document.createElement('script');
     window[cb] = (json) => {
@@ -946,6 +1718,35 @@
       renderMemberCoupons();
     };
     s.src = GAS_URL + '?action=getCoupons&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function redeemPointCoupon() {
+    if (!lineProfile) return;
+    const currentPt = memberData ? (memberData.points || 0) : 0;
+    if (currentPt < 500) {
+      alert('ポイントが不足しています（500pt必要、現在' + currentPt + 'pt）'); return;
+    }
+    if (!confirm('500ptを消費して500円割引クーポンに交換しますか？')) return;
+    const cb = 'cb_redeem_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      if (json.status === 'success') {
+        alert('✅ ' + json.message);
+        // ポイントと一覧を更新
+        if (memberData) memberData.points = json.remainPoints;
+        const ptEl = document.getElementById('redeemCurrentPt');
+        if (ptEl) ptEl.textContent = json.remainPoints + ' pt';
+        loadMemberCoupons();
+        loadMemberCard();
+      } else {
+        alert('エラー: ' + (json.message || '不明'));
+      }
+    };
+    const params = encodeURIComponent(JSON.stringify({ lineUserId: lineProfile.userId }));
+    s.src = GAS_URL + '?action=redeemPointCoupon&params=' + params + '&callback=' + cb;
     document.body.appendChild(s);
   }
 
