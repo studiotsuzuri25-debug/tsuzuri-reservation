@@ -3,2639 +3,1800 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>studio TSUZURI 管理画面</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <title>studio TSUZURI 予約</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    :root {
-      --bg: #f4f6f8;
-      --surface: #ffffff;
-      --surface-2: #f8fafb;
-      --border: #e8edf0;
-      --border-dark: #d0dbe0;
-      --primary: #68c0d3;
-      --primary-dark: #4a9db0;
-      --primary-light: #daf0f5;
-      --primary-xlight: #eef8fb;
-      --text-dark: #1e2d35;
-      --text-mid: #4a6070;
-      --text-light: #8aa0ae;
-      --error: #d05a5a;
-      --error-bg: #fff0f0;
-      --pending-color: #c08830;
-      --pending-bg: #fffbf0;
-      --confirmed-color: #3a9a7a;
-      --confirmed-bg: #f0faf6;
-      --rejected-color: #c05858;
-      --rejected-bg: #fff0f0;
-      --shadow-sm: 0 1px 4px rgba(60,100,120,0.07);
-      --shadow-md: 0 4px 16px rgba(60,100,120,0.10);
-      --shadow-lg: 0 8px 32px rgba(60,100,120,0.14);
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-    }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fafafa; color: #333; min-height: 100vh; }
 
-    body {
-      font-family: 'Noto Sans JP', sans-serif;
-      background: var(--bg);
-      color: var(--text-dark);
-      min-height: 100vh;
-    }
+    header { background: #fff; padding: 14px 16px; text-align: center; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; position: relative; }
+    header h1 { font-size: 17px; font-weight: 600; letter-spacing: 2px; color: #555; }
+    header p { font-size: 11px; color: #999; margin-top: 3px; }
 
-    /* ===== グローバルローディング ===== */
-    #globalLoading {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(30,45,53,0.45);
-      z-index: 9999;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 16px;
-      backdrop-filter: blur(3px);
+    .step-bar { display: flex; background: #fff; border-bottom: 1px solid #eee; }
+    .step-item { flex: 1; text-align: center; padding: 10px 4px 8px; font-size: 10px; color: #bbb; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .step-item.active { color: #68c0d3; border-bottom-color: #68c0d3; font-weight: 600; }
+    .step-item.done { color: #aaa; }
+    .step-num { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: #eee; color: #aaa; font-size: 10px; line-height: 18px; text-align: center; margin-bottom: 3px; }
+    .step-item.active .step-num { background: #68c0d3; color: #fff; }
+    .step-item.done .step-num { background: #b8e4ed; color: #68c0d3; }
+
+    .container { padding: 16px; max-width: 560px; margin: 0 auto; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .section-title { font-size: 15px; font-weight: 700; color: #444; margin: 8px 0 6px; text-align: center; }
+    .section-sub { font-size: 12px; color: #aaa; text-align: center; margin-bottom: 16px; }
+
+    /* メニューカード */
+    .menu-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .menu-card { background: #fff; border: 2px solid #eee; border-radius: 14px; padding: 16px 16px 16px 16px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .menu-card.selected { border-color: #68c0d3; background: #f0fafe; }
+    .menu-card-check { position: absolute; top: 14px; right: 14px; color: #68c0d3; font-size: 20px; display: none; }
+    .menu-card.selected .menu-card-check { display: block; }
+    .menu-card-name { font-size: 16px; font-weight: 600; color: #333; padding-right: 28px; }
+    .menu-card-desc { font-size: 12px; color: #aaa; margin-top: 5px; line-height: 1.5; }
+
+    /* 選択済みバー */
+    .selected-bar { background: #f0fafe; border: 1px solid #b2dfe8; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #3a8fa3; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    /* カレンダー */
+    .calendar-wrap { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 14px; }
+    .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .calendar-nav button { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 16px; color: #666; }
+    .calendar-nav span { font-size: 15px; font-weight: 600; color: #444; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+    .day-header { font-size: 10px; color: #bbb; padding: 4px 0; }
+    .day-header.sun { color: #e57373; }
+    .day-header.sat { color: #64b5f6; }
+    .day-cell { padding: 5px 2px; border-radius: 8px; font-size: 12px; min-height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; }
+    .day-num { font-size: 13px; font-weight: 500; color: #333; }
+    .day-cell.sun .day-num, .day-cell.hol .day-num { color: #e57373; }
+    .day-cell.sat .day-num { color: #64b5f6; }
+    .day-cell.past { opacity: 0.3; pointer-events: none; }
+    .day-cell.menu-closed { opacity: 0.35; }
+    .day-cell.menu-closed .day-num { color: #bbb !important; }
+    .day-cell.clickable { cursor: pointer; }
+    .day-cell.clickable:active { background: #f0f0f0; }
+    .day-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .day-dot.available { background: #81c784; }
+    .day-dot.partial { background: #ffb74d; }
+    .day-dot.full { background: #ddd; }
+    .day-dot.menu-ng { background: #ffcdd2; }
+    .legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #666; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-dot.available { background: #81c784; }
+    .legend-dot.partial { background: #ffb74d; }
+    .legend-dot.full { background: #ddd; }
+    .legend-dot.ng { background: #ffcdd2; }
+
+    /* 時間枠シート */
+    .sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; justify-content: center; align-items: flex-end; }
+    .sheet-overlay.active { display: flex; }
+    .sheet { background: #fff; border-radius: 20px 20px 0 0; padding: 20px 16px 40px; width: 100%; max-height: 75vh; overflow-y: auto; }
+    .sheet-handle { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 14px; }
+    .sheet-title { font-size: 16px; font-weight: 700; text-align: center; color: #444; margin-bottom: 14px; }
+    .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .time-btn { padding: 14px 6px; border: 2px solid #eee; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; color: #333; }
+    .time-btn:active { border-color: #68c0d3; background: #f0fafe; }
+    .time-btn:disabled { background: #f5f5f5; color: #ccc; cursor: not-allowed; border-color: #f0f0f0; }
+    .time-btn.pending { background: #fff8f0; color: #ccc; border-color: #ffe0b2; cursor: not-allowed; }
+    .time-btn.menu-ng { background: #fff5f5; color: #ccc; border-color: #ffcdd2; cursor: not-allowed; }
+    .time-status { font-size: 9px; font-weight: 400; margin-top: 2px; color: #bbb; }
+    .sheet-cancel { display: block; width: 100%; padding: 12px; background: none; border: none; font-size: 14px; color: #bbb; cursor: pointer; margin-top: 12px; }
+
+    /* フォーム */
+    .form-section { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .form-section-title { font-size: 11px; font-weight: 600; color: #68c0d3; letter-spacing: 1.5px; margin-bottom: 14px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 500; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px; border: 1px solid #e8e8e8; border-radius: 10px;
+      font-size: 15px; background: #fafafa; color: #333; outline: none; transition: border-color 0.2s;
     }
-    #globalLoading.active { display: flex; }
-    .gl-spinner {
-      width: 44px;
-      height: 44px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    .gl-text {
-      color: #fff;
-      font-size: 13px;
-      letter-spacing: 1.5px;
-      font-weight: 400;
-    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #68c0d3; background: #fff; }
+    .radio-group, .check-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-item, .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; cursor: pointer; font-size: 14px; }
+    .radio-item input, .check-item input { width: auto; margin: 0; accent-color: #68c0d3; }
+
+    /* プレビュー */
+    .preview-notice { background: #f9f5f0; border-left: 3px solid #c8a97e; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #888; line-height: 1.7; margin-bottom: 14px; }
+    .preview-card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #eee; }
+    .preview-label { font-size: 10px; font-weight: 600; color: #68c0d3; letter-spacing: 1.5px; margin-bottom: 10px; }
+    .preview-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f5f5f5; gap: 12px; }
+    .preview-row:last-child { border-bottom: none; }
+    .preview-key { font-size: 12px; color: #aaa; width: 90px; flex-shrink: 0; line-height: 1.6; }
+    .preview-val { font-size: 13px; color: #333; font-weight: 500; flex: 1; line-height: 1.6; }
+
+    /* ボタン */
+    .btn-primary { display: block; width: 100%; padding: 16px; background: #68c0d3; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; letter-spacing: 1px; transition: background 0.2s; margin-top: 4px; }
+    .btn-primary:active { background: #4a9db0; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-back { display: block; width: 100%; padding: 12px; background: none; color: #aaa; border: none; font-size: 14px; cursor: pointer; margin-top: 6px; }
+
+    /* ローディング */
+    .loading { text-align: center; padding: 60px 20px; color: #aaa; font-size: 14px; }
+    .loading-spinner { width: 30px; height: 30px; border: 3px solid #eee; border-top-color: #68c0d3; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ===== カレンダーモーダル ===== */
-    #calModalOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(30,45,53,0.5);
-      z-index: 200;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      backdrop-filter: blur(3px);
-    }
-    #calModalOverlay.active { display: flex; }
-    .cal-modal {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 24px 20px 20px;
-      width: 100%;
-      max-width: 360px;
-      box-shadow: var(--shadow-lg);
-    }
-    .cal-modal-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .cal-modal-nav button {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      width: 36px;
-      height: 36px;
-      cursor: pointer;
-      color: var(--text-mid);
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-    .cal-modal-nav button:hover { border-color: var(--primary); color: var(--primary-dark); }
-    .cal-modal-month {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 18px;
-      font-weight: 400;
-      letter-spacing: 2px;
-      color: var(--text-dark);
-    }
-    .cal-modal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-      text-align: center;
-      margin-bottom: 16px;
-    }
-    .cal-dh {
-      font-size: 10px;
-      color: var(--text-light);
-      padding: 4px 0;
-      letter-spacing: 1px;
-    }
-    .cal-dh.sun { color: var(--rejected-color); }
-    .cal-dh.sat { color: var(--primary-dark); }
-    .cal-day {
-      width: 100%;
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--text-dark);
-      transition: all 0.15s;
-      border: 2px solid transparent;
-    }
-    .cal-day:hover { background: var(--primary-xlight); }
-    .cal-day.sun { color: var(--rejected-color); }
-    .cal-day.sat { color: var(--primary-dark); }
-    .cal-day.past { opacity: 0.3; pointer-events: none; }
-    .cal-day.today { border-color: var(--primary-light); }
-    .cal-day.selected { background: var(--primary); color: #fff !important; border-color: var(--primary-dark); }
-    .cal-modal-actions {
-      display: flex;
-      gap: 8px;
-    }
+    /* 完了 */
+    .complete-screen { display: none; text-align: center; padding: 60px 24px; }
+    .complete-screen.active { display: block; }
+    .complete-icon { font-size: 64px; margin-bottom: 20px; }
+    .complete-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #444; }
+    .complete-screen p { font-size: 14px; color: #777; line-height: 1.8; }
 
-    /* ===== 日付入力ボタン ===== */
-    .date-input-btn {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      background: var(--bg);
-      color: var(--text-dark);
-      font-family: 'Noto Sans JP', sans-serif;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: border-color 0.2s;
-      text-align: left;
+    /* ===== 会員証カード ===== */
+    .member-card-wrap {
+      background: linear-gradient(135deg, #4a9db0 0%, #68c0d3 60%, #8dd8e8 100%);
+      border-radius: 18px; padding: 20px 20px 16px; margin: 12px 0 16px;
+      color: #fff; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(104,192,211,0.4);
     }
-    .date-input-btn:hover { border-color: var(--primary); background: var(--surface); }
-    .date-placeholder { color: var(--text-light); }
+    .member-card-wrap::before {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    .member-card-logo { font-size: 11px; letter-spacing: 3px; opacity: 0.85; margin-bottom: 12px; }
+    .member-card-name { font-size: 20px; font-weight: 600; letter-spacing: 1px; margin-bottom: 4px; }
+    .member-card-rank { font-size: 11px; letter-spacing: 2px; opacity: 0.85; margin-bottom: 14px; }
+    .member-card-points { display: flex; gap: 20px; }
+    .member-card-pt { text-align: center; }
+    .member-card-pt-num { font-size: 24px; font-weight: 700; line-height: 1; }
+    .member-card-pt-label { font-size: 10px; opacity: 0.75; margin-top: 3px; letter-spacing: 1px; }
+    .rank-progress-wrap { margin-top: 14px; }
+    .rank-progress-label { font-size: 10px; opacity: 0.75; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .rank-progress-bar { background: rgba(255,255,255,0.25); border-radius: 4px; height: 6px; overflow: hidden; }
+    .rank-progress-fill { background: #fff; border-radius: 4px; height: 100%; transition: width 0.6s ease; }
 
-    /* ===== 不可日時間枠グリッド ===== */
-    .closed-slot-item {
-      padding: 9px 4px;
-      border-radius: var(--radius-sm);
-      font-size: 11px;
-      text-align: center;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      font-weight: 500;
-      transition: all 0.15s;
-      line-height: 1.4;
-      background: var(--surface);
-      color: var(--text-mid);
-      user-select: none;
+    /* クーポンカード */
+    .coupon-list { margin-bottom: 14px; }
+    .coupon-item {
+      background: #fff; border: 1.5px dashed #68c0d3; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
     }
-    .closed-slot-item.selected {
-      background: var(--rejected-bg);
-      color: var(--rejected-color);
-      border-color: #f0c0c0;
-    }
-    .closed-slot-item:hover:not(.selected) { background: var(--surface-2); }
+    .coupon-item-icon { font-size: 22px; }
+    .coupon-item-name { font-size: 14px; font-weight: 600; color: #333; }
+    .coupon-item-detail { font-size: 11px; color: #aaa; margin-top: 2px; }
 
-    /* ===== 不可日カード ===== */
-    .closed-card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      margin-bottom: 10px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-      border-left: 3px solid #f0c0c0;
-    }
-    .closed-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 8px;
-    }
-    .closed-date-label {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 16px;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      color: var(--text-dark);
-    }
-    .closed-type-badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 500;
-      background: var(--rejected-bg);
-      color: var(--rejected-color);
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-    }
-    .closed-slots-label {
-      font-size: 12px;
-      color: var(--text-mid);
-      line-height: 1.6;
-    }
-    .closed-note {
-      font-size: 11px;
-      color: var(--text-light);
-      margin-top: 4px;
-    }
-
-    /* ===== ヘッダー ===== */
-    header {
-      background: var(--surface);
-      padding: 0 20px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      box-shadow: var(--shadow-sm);
-    }
-    .header-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 56px;
-    }
-    .header-logo {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 20px;
-      font-weight: 400;
-      letter-spacing: 3px;
-      color: var(--primary-dark);
-    }
-    .header-sub {
-      font-size: 10px;
-      color: var(--text-light);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .header-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #68c0d3;
-    }
-    .header-status {
-      font-size: 10px;
-      color: var(--text-light);
-      letter-spacing: 1px;
-    }
-
-    /* ===== タブ ===== */
-    .tab-bar {
-      background: var(--surface);
-      display: flex;
-      overflow-x: auto;
-      border-bottom: 1px solid var(--border);
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .tab-bar::-webkit-scrollbar { display: none; }
-    .tab {
-      flex-shrink: 0;
-      padding: 14px 18px;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--text-light);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
-      white-space: nowrap;
-      font-family: 'Noto Sans JP', sans-serif;
-    }
-    .tab:hover { color: var(--text-mid); }
-    .tab.active {
-      color: #2a8fa3;
-      border-bottom: 2px solid #68c0d3;
-    }
-
-    .tab-content { display: none; padding: 20px 16px 40px; }
-    .tab-content.active { display: block; }
-
-    .section-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 18px;
-      font-weight: 400;
-      letter-spacing: 2px;
-      color: var(--text-dark);
-      margin-bottom: 16px;
-    }
-    .section-sub {
-      font-size: 11px;
-      color: var(--text-light);
-      letter-spacing: 1px;
-      margin-bottom: 16px;
-      margin-top: -10px;
-    }
-
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 18px;
-      margin-bottom: 12px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-      transition: box-shadow 0.2s;
-    }
-    .card:hover { box-shadow: var(--shadow-md); }
-
-    .res-card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 18px;
-      margin-bottom: 12px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-      border-left: 3px solid var(--border-dark);
-    }
-    .res-card.pending { border-left-color: var(--primary); }
-    .res-card.confirmed { border-left-color: var(--primary); }
-    .res-card.rejected { border-left-color: #d05a5a; opacity: 0.7; }
-
-    .res-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-    }
-    .res-name {
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--text-dark);
-      letter-spacing: 0.5px;
-    }
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 1px;
-    }
-    .status-badge.pending { background: var(--pending-bg); color: var(--pending-color); }
-    .status-badge.confirmed { background: var(--confirmed-bg); color: var(--confirmed-color); }
-    .status-badge.rejected { background: var(--rejected-bg); color: var(--rejected-color); }
-
-    .res-details { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-    .res-detail {
-      font-size: 13px;
-      color: var(--text-mid);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .res-detail-icon { font-size: 12px; opacity: 0.7; }
-
-    .answers-block {
-      background: var(--primary-xlight);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      border-left: 2px solid var(--primary-light);
-    }
-    .answer-item {
-      font-size: 12px;
-      color: var(--text-mid);
-      margin-bottom: 3px;
-      line-height: 1.6;
-    }
-    .answer-item strong { color: var(--text-dark); font-weight: 500; }
-
-    .res-meta {
-      font-size: 10px;
-      color: var(--text-light);
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-
-    .res-actions { display: flex; gap: 8px; }
-    .btn-confirm {
-      flex: 1;
-      padding: 11px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-      cursor: pointer;
-      font-family: 'Noto Sans JP', sans-serif;
-      transition: background 0.2s;
-    }
-    .btn-confirm:hover { background: var(--primary-dark); }
-    .btn-reject {
-      flex: 1;
-      padding: 11px;
-      background: var(--surface);
-      color: #d05a5a;
-      border: 1px solid #d05a5a;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-      cursor: pointer;
-      font-family: 'Noto Sans JP', sans-serif;
-      transition: all 0.2s;
-    }
-    .btn-reject:hover { background: var(--error-bg); }
-
-    .add-form {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-    }
-    .form-group { margin-bottom: 14px; }
-    .form-group label {
-      display: block;
-      font-size: 11px;
-      color: var(--text-light);
-      margin-bottom: 6px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      background: var(--bg);
-      color: var(--text-dark);
-      font-family: 'Noto Sans JP', sans-serif;
-      transition: border-color 0.2s;
-      outline: none;
-    }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      border-color: #68c0d3;
-      background: var(--surface);
-    }
-    .options-hint {
-      font-size: 11px;
-      color: var(--text-light);
-      margin-top: 4px;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 13px;
-      background: #68c0d3;
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      cursor: pointer;
-      font-family: 'Noto Sans JP', sans-serif;
-      transition: all 0.2s;
-    }
-    .btn-primary:hover { background: #4a9db0; }
-    .btn-secondary {
-      padding: 7px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border-dark);
-      border-radius: var(--radius-sm);
-      font-size: 11px;
-      color: var(--text-mid);
-      cursor: pointer;
-      font-family: 'Noto Sans JP', sans-serif;
-      letter-spacing: 0.5px;
-      transition: all 0.2s;
-    }
-    .btn-secondary:hover { border-color: var(--primary); color: var(--primary-dark); }
-    .btn-danger {
-      padding: 7px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border-dark);
-      border-radius: var(--radius-sm);
-      font-size: 11px;
-      color: var(--text-light);
-      cursor: pointer;
-      font-family: 'Noto Sans JP', sans-serif;
-      transition: all 0.2s;
-    }
-    .btn-danger:hover { border-color: #d05a5a; color: #d05a5a; }
-    .btn-small {
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text-mid);
-      font-family: 'Noto Sans JP', sans-serif;
-      transition: all 0.2s;
-    }
-    .btn-small:hover { border-color: var(--primary); }
-    .btn-small.danger { color: #d05a5a; }
-    .btn-small.danger:hover { border-color: #d05a5a; }
-
-    .calendar-wrap {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-      margin-bottom: 16px;
-    }
-    .calendar-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .calendar-nav button {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 7px 14px;
-      cursor: pointer;
-      color: var(--text-mid);
-      font-size: 16px;
-      transition: all 0.2s;
-    }
-    .calendar-nav button:hover { border-color: var(--primary); color: var(--primary-dark); }
-    .calendar-month {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 18px;
-      font-weight: 400;
-      letter-spacing: 2px;
-      color: var(--text-dark);
-    }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
-    .day-header { font-size: 10px; color: var(--text-light); padding: 4px 0; letter-spacing: 1px; }
-    .day-header.sun { color: #d05a5a; }
-    .day-header.sat { color: var(--primary); }
-    .day-cell {
-      padding: 5px 2px;
-      border-radius: 7px;
-      font-size: 12px;
-      min-height: 44px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 2px;
-    }
-    .day-cell.sun .day-num { color: #d05a5a; }
-    .day-cell.sat .day-num { color: var(--primary); }
-    .day-num { font-size: 12px; font-weight: 400; color: var(--text-dark); }
-    .slot-tag {
-      font-size: 9px;
-      padding: 2px 4px;
-      border-radius: 4px;
-      width: 100%;
-      text-align: center;
-      letter-spacing: 0.3px;
-    }
-    .slot-tag.available { background: var(--confirmed-bg); color: var(--confirmed-color); }
-    .slot-tag.partial { background: var(--pending-bg); color: var(--pending-color); }
-    .slot-tag.closed { background: var(--surface-2); color: var(--text-light); }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .stat-card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 18px 14px;
-      text-align: center;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-    }
-    .stat-number {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 36px;
-      font-weight: 300;
-      color: var(--text-dark);
-      line-height: 1;
-    }
-    .stat-label {
-      font-size: 10px;
-      color: var(--text-light);
-      margin-top: 6px;
-      letter-spacing: 1px;
-    }
-    .chart-wrap {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 18px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-    }
-    .chart-title {
-      font-size: 11px;
-      color: var(--text-light);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-      font-weight: 500;
-    }
-    .bar-row { display: flex; align-items: center; margin-bottom: 7px; gap: 8px; }
-    .bar-label { width: 38px; font-size: 10px; color: var(--text-light); text-align: right; }
-    .bar-track { flex: 1; background: var(--surface-2); border-radius: 3px; height: 16px; overflow: hidden; }
-    .bar-fill { height: 100%; background: linear-gradient(90deg, #68c0d3, #4a9db0); border-radius: 3px; transition: width 0.6s ease; }
-    .bar-value { width: 20px; font-size: 10px; color: var(--text-mid); }
-
-    .loading { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 13px; letter-spacing: 1px; }
-    .loading-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
-    .loading-dot { width: 6px; height: 6px; border-radius: 50%; background: #68c0d3; animation: pulse 1.2s ease-in-out infinite; }
-    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes pulse { 0%,80%,100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
-    .empty { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 13px; letter-spacing: 1px; }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(30,45,53,0.5);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      backdrop-filter: blur(2px);
-    }
-    .modal-overlay.active { display: flex; }
-    .modal {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 28px 24px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-    }
-    .modal-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 20px;
-      font-weight: 400;
-      letter-spacing: 2px;
-      color: var(--text-dark);
-      margin-bottom: 20px;
-    }
-    .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
-
-    .divider { border: none; border-top: 1px solid var(--surface-2); margin: 16px 0; }
-
-    .restriction-card {
-      background: #fff8f0;
-      border: 1px solid #f0dcc0;
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-    }
-    .restriction-info { flex: 1; }
-    .restriction-type { font-size: 11px; font-weight: 600; color: #c08030; letter-spacing: 0.5px; margin-bottom: 3px; }
-    .restriction-detail { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
-    .restriction-note { font-size: 11px; color: var(--text-light); margin-top: 2px; }
-
-    .menu-card {
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      padding: 18px;
-      margin-bottom: 12px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--surface-2);
-    }
-    .menu-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .menu-name { font-size: 15px; font-weight: 500; color: var(--text-dark); letter-spacing: 0.5px; }
-    .menu-desc { font-size: 12px; color: var(--text-light); margin-bottom: 12px; line-height: 1.6; }
-    .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-    .menu-questions-section { border-top: 1px solid var(--border); padding-top: 12px; }
-    .menu-questions-title { font-size: 10px; color: var(--text-light); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; font-weight: 500; }
-
-    .question-card { background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 12px 14px; margin-bottom: 8px; }
-    .question-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .question-title { font-size: 13px; font-weight: 500; color: var(--text-dark); flex: 1; margin-right: 8px; line-height: 1.5; }
-    .question-meta { font-size: 11px; color: var(--text-light); margin: 5px 0 7px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .question-actions { display: flex; gap: 5px; }
-
-    .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; }
-    .badge.required { background: var(--rejected-bg); color: var(--rejected-color); }
-    .badge.optional { background: var(--surface-2); color: var(--text-light); }
-    .badge.enabled { background: var(--confirmed-bg); color: var(--confirmed-color); }
-    .badge.disabled { background: var(--surface-2); color: var(--text-light); }
-    .badge.type { background: var(--primary-xlight); color: var(--primary-dark); }
-
-    /* ===== メールテンプレートタブ ===== */
-    .email-tmpl-tab {
-      padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-      background: var(--surface); color: var(--text-mid); font-size: 12px; cursor: pointer;
-      transition: all 0.15s; font-weight: 500;
-    }
-    .email-tmpl-tab:hover { border-color: var(--primary); color: var(--primary-dark); }
-    .email-tmpl-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-    /* ===== 差し込み変数ボタン ===== */
-    .var-btn {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 5px 10px; border: 1px solid var(--primary-light);
-      border-radius: 20px; background: var(--primary-xlight);
-      color: var(--primary-dark); font-size: 11px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s; white-space: nowrap;
-    }
-    .var-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .var-btn:active { transform: scale(0.96); }
-    .var-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-    .var-section-label {
-      font-size: 10px; color: var(--text-light); margin-bottom: 4px; margin-top: 8px;
-    }
-
-    /* ===== 進捗フィルターボタン ===== */
-    .prog-filter-btn {
-      padding: 7px 14px; border: 1px solid var(--border); border-radius: 20px;
-      background: var(--surface); color: var(--text-mid); font-size: 11px; cursor: pointer;
-      transition: all 0.15s; font-weight: 500;
-    }
-    .prog-filter-btn:hover { border-color: var(--primary); color: var(--primary-dark); }
-    .prog-filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-    /* ===== 進捗バッジ ===== */
-    .prog-badge {
-      display: inline-block; padding: 3px 10px; border-radius: 20px;
-      font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
-    }
-    .prog-badge.予約受付 { background: #f0f4ff; color: #5070b0; }
-    .prog-badge.撮影待ち { background: var(--pending-bg); color: var(--pending-color); }
-    .prog-badge.撮影済み { background: #f0f8ff; color: #4090c0; }
-    .prog-badge.編集中   { background: #fff0f8; color: #b060a0; }
-    .prog-badge.納品完了 { background: var(--confirmed-bg); color: var(--confirmed-color); }
-    .prog-badge.不可     { background: var(--rejected-bg); color: var(--rejected-color); }
-
-    /* ===== 会員ランクバッジ ===== */
-    .rank-badge {
-      display: inline-block; padding: 2px 10px; border-radius: 20px;
-      font-size: 10px; font-weight: 700; letter-spacing: 1px;
-    }
-    .rank-badge.ノーマル  { background: #f0f0f0; color: #888; }
-    .rank-badge.シルバー  { background: #f0f4f8; color: #6080a0; }
-    .rank-badge.ゴールド  { background: #fff8e0; color: #b08020; }
-    .rank-badge.プラチナ  { background: #f0fff8; color: #30a070; }
-
-    /* ===== 会員カード ===== */
-    .member-card {
-      background: var(--surface); border-radius: var(--radius-md);
-      padding: 16px 18px; margin-bottom: 10px;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--surface-2);
-      display: flex; align-items: center; gap: 14px;
-    }
-    .member-avatar {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--primary-xlight); display: flex; align-items: center;
-      justify-content: center; font-size: 18px; flex-shrink: 0;
-    }
-    .member-info { flex: 1; min-width: 0; }
-    .member-name { font-size: 15px; font-weight: 500; color: var(--text-dark); margin-bottom: 4px; }
-    .member-meta { font-size: 11px; color: var(--text-light); line-height: 1.8; }
-
-    /* ===== クーポンカード ===== */
-    .coupon-card {
-      background: var(--surface); border-radius: var(--radius-md);
-      padding: 14px 16px; margin-bottom: 8px;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--surface-2);
-      border-left: 3px solid var(--primary);
-      display: flex; align-items: center; gap: 12px;
-    }
-    .coupon-card.used { opacity: 0.5; border-left-color: var(--border-dark); }
-    .coupon-info { flex: 1; }
-    .coupon-name { font-size: 14px; font-weight: 500; color: var(--text-dark); }
-    .coupon-meta { font-size: 11px; color: var(--text-light); margin-top: 3px; line-height: 1.8; }
+    /* 友達紹介パネル */
+    .referral-panel {
+      background: #fff; border-radius: 14px; padding: 16px;
+      border: 1px solid #eee; margin-bottom: 14px;
+    }
+    .referral-code {
+      font-size: 22px; font-weight: 700; letter-spacing: 4px;
+      color: #4a9db0; text-align: center; padding: 12px;
+      background: #f0fafe; border-radius: 10px; margin: 10px 0;
+    }
+    .member-screen { display: none; }
+    .member-screen.active { display: block; }
   </style>
 </head>
 <body>
 
-<!-- グローバルローディング -->
-<div id="globalLoading">
-  <div class="gl-spinner"></div>
-  <div class="gl-text" id="globalLoadingText">処理中...</div>
-</div>
-
-<!-- カレンダーモーダル -->
-<div id="calModalOverlay">
-  <div class="cal-modal">
-    <div class="cal-modal-nav">
-      <button onclick="calChangeMonth(-1)">&#8249;</button>
-      <span class="cal-modal-month" id="calModalMonthLabel"></span>
-      <button onclick="calChangeMonth(1)">&#8250;</button>
-    </div>
-    <div class="cal-modal-grid" id="calModalGrid"></div>
-    <div class="cal-modal-actions">
-      <button class="btn-primary" onclick="calConfirm()" style="flex:1;">選択する</button>
-      <button class="btn-secondary" onclick="calClose()">キャンセル</button>
-    </div>
-  </div>
-</div>
-
 <header>
-  <div class="header-inner">
-    <div>
-      <div class="header-logo">studio TSUZURI</div>
-      <div class="header-sub">管理画面</div>
-    </div>
-    <div class="header-right">
-      <div class="header-dot"></div>
-      <div class="header-status">Admin</div>
-    </div>
+  <h1>studio TSUZURI</h1>
+  <p>撮影日のご予約</p>
+  <div style="position:absolute;top:12px;right:14px;">
+    <button onclick="openMemberPage()" style="background:none;border:1px solid #ddd;border-radius:20px;padding:5px 12px;font-size:11px;color:#888;cursor:pointer;">会員証</button>
   </div>
 </header>
 
-<div class="tab-bar">
-  <div class="tab active" onclick="switchTab('reservations', this)">予約一覧</div>
-  <div class="tab" onclick="switchTab('calendar', this)">カレンダー</div>
-  <div class="tab" onclick="switchTab('schedule', this)">不可日設定</div>
-  <div class="tab" onclick="switchTab('menus', this)">メニュー設定</div>
-  <div class="tab" onclick="switchTab('questions', this)">共通質問</div>
-  <div class="tab" onclick="switchTab('stats', this)">分析</div>
-  <div class="tab" onclick="switchTab('webform', this)">WEBフォーム</div>
-  <div class="tab" onclick="switchTab('email', this); loadEmailTemplates()">メール</div>
-  <div class="tab" onclick="switchTab('progress', this); loadProgress()">進捗</div>
-  <div class="tab" onclick="switchTab('members', this); loadMembers()">会員</div>
-  <div class="tab" onclick="switchTab('coupons', this); loadAllCoupons()">クーポン</div>
+<div class="step-bar" id="stepBar">
+  <div class="step-item active" id="sl1"><div class="step-num">1</div><br>メニュー</div>
+  <div class="step-item" id="sl2"><div class="step-num">2</div><br>日時</div>
+  <div class="step-item" id="sl3"><div class="step-num">3</div><br>入力</div>
+  <div class="step-item" id="sl4"><div class="step-num">4</div><br>確認</div>
 </div>
 
-<!-- 予約一覧 -->
-<div class="tab-content active" id="tab-reservations">
-  <div class="section-title">予約一覧</div>
-  <div id="reservationList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
+<div id="mainContent">
+
+  <!-- ローディング -->
+  <div class="container" id="loadingScreen">
+    <div class="loading"><div class="loading-spinner"></div>読み込み中...</div>
+  </div>
+
+  <!-- Step1: メニュー選択 -->
+  <div class="container screen" id="screen1">
+    <div class="section-title" style="margin-top:8px;">撮影メニューを選択</div>
+    <div class="section-sub">ご希望のメニューをお選びください</div>
+    <div class="menu-list" id="menuList"></div>
+    <button class="btn-primary" id="btnStep1" onclick="goToStep2()" style="display:none;">次へ　日時を選ぶ →</button>
+  </div>
+
+  <!-- Step2: カレンダー -->
+  <div class="container screen" id="screen2">
+    <div class="selected-bar" id="selectedMenuBar"></div>
+    <div class="section-title">撮影日を選択</div>
+    <div class="section-sub">日付をタップして時間枠を選んでください</div>
+    <div class="calendar-wrap">
+      <div class="calendar-nav">
+        <button onclick="changeMonth(-1)">&#8249;</button>
+        <span id="monthLabel"></span>
+        <button onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot available"></div>空きあり</div>
+        <div class="legend-item"><div class="legend-dot partial"></div>一部埋まり</div>
+        <div class="legend-item"><div class="legend-dot full"></div>満員</div>
+        <div class="legend-item"><div class="legend-dot ng"></div>メニュー不可</div>
+      </div>
+    </div>
+    <button class="btn-back" onclick="goToStep1()">← メニューを選び直す</button>
+  </div>
+
+  <!-- Step3: 入力フォーム -->
+  <div class="container screen" id="screen3">
+    <div class="selected-bar" id="selectedDateBar"></div>
+
+    <div class="form-section">
+      <div class="form-section-title">基本情報</div>
+      <div class="form-group">
+        <label>お名前 <span style="color:#e57373;font-size:11px;">*必須</span></label>
+        <input type="text" id="inputName" placeholder="例：山田 花子">
+      </div>
+      <div class="form-group">
+        <label>電話番号 <span style="color:#e57373;font-size:11px;">*必須</span></label>
+        <input type="tel" id="inputPhone" placeholder="例：090-1234-5678">
+      </div>
+      <div class="form-group">
+        <label>撮影人数 <span style="color:#e57373;font-size:11px;">*必須</span></label>
+        <select id="inputCount">
+          <option value="">選択してください</option>
+          <option>1名</option><option>2名</option><option>3名</option>
+          <option>4名</option><option>5名以上</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-section" id="menuQSection" style="display:none;">
+      <div class="form-section-title" id="menuQTitle"></div>
+      <div id="menuQuestions"></div>
+    </div>
+
+    <div class="form-section" id="commonQSection" style="display:none;">
+      <div class="form-section-title">その他</div>
+      <div id="commonQuestions"></div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">ご要望</div>
+      <div class="form-group">
+        <label>自由にご記入ください <span style="font-size:11px;color:#aaa;">任意</span></label>
+        <textarea id="inputNote" rows="3" placeholder="衣装のご要望、アレルギー情報など"></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="goToStep4()">内容を確認する →</button>
+    <button class="btn-back" onclick="backToStep2()">← 日時を選び直す</button>
+  </div>
+
+  <!-- Step4: プレビュー・送信 -->
+  <div class="container screen" id="screen4">
+    <div class="section-title" style="margin-top:8px;">予約内容の確認</div>
+    <div class="preview-notice">
+      📌 内容をご確認のうえ「予約リクエストを送信」してください。<br>
+      送信後は<strong>仮押さえ</strong>となり、店舗からの確定連絡をもって正式な予約確定となります。
+    </div>
+
+    <div class="preview-card">
+      <div class="preview-label">撮影情報</div>
+      <div class="preview-row"><div class="preview-key">メニュー</div><div class="preview-val" id="pv_menu">—</div></div>
+      <div class="preview-row"><div class="preview-key">撮影日</div><div class="preview-val" id="pv_date">—</div></div>
+      <div class="preview-row"><div class="preview-key">時間枠</div><div class="preview-val" id="pv_time">—</div></div>
+      <div class="preview-row"><div class="preview-key">撮影人数</div><div class="preview-val" id="pv_count">—</div></div>
+    </div>
+
+    <div class="preview-card">
+      <div class="preview-label">お客様情報</div>
+      <div class="preview-row"><div class="preview-key">お名前</div><div class="preview-val" id="pv_name">—</div></div>
+      <div class="preview-row"><div class="preview-key">電話番号</div><div class="preview-val" id="pv_phone">—</div></div>
+    </div>
+
+    <div class="preview-card" id="pvMenuQCard" style="display:none;">
+      <div class="preview-label" id="pvMenuQLabel"></div>
+      <div id="pv_menuAnswers"></div>
+    </div>
+
+    <div class="preview-card" id="pvCommonQCard" style="display:none;">
+      <div class="preview-label">その他の回答</div>
+      <div id="pv_commonAnswers"></div>
+    </div>
+
+    <div class="preview-card" id="pvNoteCard" style="display:none;">
+      <div class="preview-label">ご要望</div>
+      <div class="preview-row"><div class="preview-key">内容</div><div class="preview-val" id="pv_note">—</div></div>
+    </div>
+
+    <button class="btn-primary" id="btnSubmit" onclick="submitReservation()">予約リクエストを送信</button>
+    <button class="btn-back" onclick="showScreen(3)">← 入力内容を修正する</button>
+  </div>
+
 </div>
 
-<!-- カレンダー -->
-<div class="tab-content" id="tab-calendar">
-  <div class="calendar-wrap">
-    <div class="calendar-nav">
-      <button onclick="adminChangeMonth(-1)">&#8249;</button>
-      <span class="calendar-month" id="adminMonthLabel"></span>
-      <button onclick="adminChangeMonth(1)">&#8250;</button>
-    </div>
-    <div class="calendar-grid" id="adminCalendarGrid"></div>
-  </div>
+<!-- 完了画面 -->
+<div class="complete-screen" id="completeScreen">
+  <div class="complete-icon">📅</div>
+  <h2>リクエスト送信完了</h2>
+  <p>予約リクエストを受け付けました。<br>店舗にて確認後、LINEにてご連絡いたします。<br><br>確定連絡をもって正式な予約となります。<br>しばらくお待ちください。</p>
 </div>
 
-<!-- 不可日設定 -->
-<div class="tab-content" id="tab-schedule">
-  <div class="add-form">
-    <div class="section-title">不可日・時間を追加</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:14px;line-height:1.7;">全日程がデフォルトで空きです。<br>撮影できない日・時間帯をここで設定してください。</div>
 
-    <div class="form-group">
-      <label>日付</label>
-      <button class="date-input-btn" id="closedDateBtn" onclick="openCalModal('closedDate')">
-        <span id="closedDateDisplay" class="date-placeholder">日付を選択してください</span>
-        <span>📅</span>
-      </button>
-      <input type="hidden" id="closedDate">
-    </div>
-
-    <div class="form-group">
-      <label>設定タイプ</label>
-      <select id="closedType" onchange="toggleClosedTimeSlot()">
-        <option value="allday">終日不可</option>
-        <option value="slot">特定時間枠のみ不可</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="closedSlotWrap" style="display:none;">
-      <label>不可にする時間枠（複数選択可）</label>
-      <div id="closedSlotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;"></div>
-    </div>
-
-    <div class="form-group">
-      <label>備考（任意）</label>
-      <input type="text" id="closedNote" placeholder="例：機材メンテナンスのため">
-    </div>
-
-    <button class="btn-primary" onclick="addClosedSetting()">不可設定を追加する</button>
+<!-- 会員証画面 -->
+<div id="memberPage" style="display:none;">
+  <div style="background:#fff;border-bottom:1px solid #eee;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;">
+    <button onclick="closeMemberPage()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888;">←</button>
+    <span style="font-size:15px;font-weight:600;color:#444;letter-spacing:1px;">会員証</span>
   </div>
 
-  <div class="section-title" style="margin-top:4px;">設定済み一覧</div>
-  <div id="closedList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-</div>
-
-<!-- メニュー設定 -->
-<div class="tab-content" id="tab-menus">
-  <div class="add-form">
-    <div class="section-title">メニューを追加</div>
-    <div class="form-group">
-      <label>メニュー名</label>
-      <input type="text" id="menuName" placeholder="例：お宮参り">
-    </div>
-    <div class="form-group">
-      <label>説明（任意）</label>
-      <input type="text" id="menuDesc" placeholder="例：生後1ヶ月前後のお子様の撮影">
-    </div>
-    <button class="btn-primary" onclick="addMenu()">メニューを追加する</button>
-  </div>
-  <div class="section-title">メニュー一覧</div>
-  <div id="menuList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-</div>
-
-<!-- 共通質問 -->
-<div class="tab-content" id="tab-questions">
-  <div class="add-form">
-    <div class="section-title">共通質問を追加</div>
-    <div class="section-sub">全メニュー共通で表示される質問です</div>
-    <div class="form-group">
-      <label>質問文</label>
-      <input type="text" id="qQuestion" placeholder="例：ご要望があればお書きください">
-    </div>
-    <div class="form-group">
-      <label>回答形式</label>
-      <select id="qType" onchange="toggleOptionsField('qOptions', 'qType')">
-        <option value="テキスト">テキスト入力（自由記述）</option>
-        <option value="プルダウン">プルダウン選択</option>
-        <option value="ラジオ">ラジオボタン（1つ選択）</option>
-        <option value="チェック">チェックボックス（複数選択）</option>
-      </select>
-    </div>
-    <div class="form-group" id="qOptionsWrap" style="display:none;">
-      <label>選択肢（カンマ区切り）</label>
-      <input type="text" id="qOptions" placeholder="例：希望する,不要">
-      <div class="options-hint">カンマ（,）で区切って入力してください</div>
-    </div>
-    <div class="form-group">
-      <label>必須 / 任意</label>
-      <select id="qRequired">
-        <option value="任意">任意</option>
-        <option value="必須">必須</option>
-      </select>
-    </div>
-    <button class="btn-primary" onclick="addCommonQuestion()">共通質問を追加する</button>
-  </div>
-  <div class="section-title">共通質問一覧</div>
-  <div id="questionList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-</div>
-
-<!-- 分析 -->
-<div class="tab-content" id="tab-stats">
-  <div class="section-title">分析</div>
-  <div class="stats-grid" id="statsGrid"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-  <div class="chart-wrap" id="chartContainer" style="display:none;">
-    <div class="chart-title">時間帯別 確定数</div>
-    <div id="timeChart"></div>
-  </div>
-</div>
-
-<!-- メールテンプレート -->
-<div class="tab-content" id="tab-email">
-  <div class="section-title">メールテンプレート設定</div>
-
-  <!-- テンプレート種別タブ -->
-  <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-    <button class="email-tmpl-tab active" onclick="switchEmailTab('受付',this)">受付メール</button>
-    <button class="email-tmpl-tab" onclick="switchEmailTab('確定',this)">確定メール</button>
-    <button class="email-tmpl-tab" onclick="switchEmailTab('不可',this)">不可メール</button>
-    <button class="email-tmpl-tab" onclick="switchEmailTab('リマインド',this)">リマインドメール</button>
+  <!-- タブ -->
+  <div style="display:flex;border-bottom:1px solid #eee;background:#fff;">
+    <button class="member-tab active" id="mtab1" onclick="switchMemberTab('card',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#68c0d3;font-weight:600;border-bottom:2px solid #68c0d3;cursor:pointer;">会員証</button>
+    <button class="member-tab" id="mtab2" onclick="switchMemberTab('coupon',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">クーポン</button>
+    <button class="member-tab" id="mtab3" onclick="switchMemberTab('referral',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">友達紹介</button>
+    <button class="member-tab" id="mtab5" onclick="switchMemberTab('bookings',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">📋 予約</button>
+    <button class="member-tab" id="mtab6" onclick="switchMemberTab('photos',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">📁 データ</button>
+    <button class="member-tab" id="mtab4" onclick="switchMemberTab('guide',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:11px;color:#bbb;cursor:pointer;">ガイド</button>
   </div>
 
-  <div class="add-form" id="emailTmplForm">
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:14px;" id="emailTmplDesc"></div>
-    <input type="hidden" id="emailTmplKey" value="受付">
-
-    <!-- 差し込み変数説明 -->
-    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--text-light);line-height:2;">
-      <strong style="color:var(--text-mid);">使える差し込み変数：</strong><br>
-      <code>{{name}}</code> お名前　<code>{{date}}</code> 撮影日　<code>{{time}}</code> 時間枠<br>
-      <code>{{menu}}</code> メニュー　<code>{{count}}</code> 人数　<code>{{phone}}</code> 電話番号<br>
-      <code>{{answers}}</code> フォーム回答内容（全項目）
+  <div style="padding:16px;">
+    <!-- 会員証タブ -->
+    <div id="memberTabCard" class="member-screen active">
+      <div id="memberCardContent">
+        <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>件名</label>
-      <input type="text" id="emailTmplSubject" placeholder="メールの件名">
+    <!-- クーポンタブ -->
+    <div id="memberTabCoupon" class="member-screen">
+      <!-- ポイント交換 -->
+      <div id="pointRedeemPanel" style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border:1px solid #b8e3ec;border-radius:14px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">💫 ポイントをクーポンに交換</div>
+        <div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.7;">
+          500ptで<strong style="color:#68c0d3;">500円割引クーポン</strong>（有効期限90日）に交換できます。
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;color:#888;">現在のポイント</span>
+          <span id="redeemCurrentPt" style="font-size:18px;font-weight:700;color:#68c0d3;">--- pt</span>
+        </div>
+        <button onclick="redeemPointCoupon()" style="width:100%;padding:11px;background:#68c0d3;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">500ptで交換する</button>
+      </div>
+      <div class="section-title" style="margin-bottom:12px;">利用可能なクーポン</div>
+      <div id="memberCouponList">
+        <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>本文</label>
-      <textarea id="emailTmplBody" rows="12" style="font-family:monospace;font-size:13px;line-height:1.8;"></textarea>
-    </div>
-    <button class="btn-primary" onclick="saveEmailTemplate()">このテンプレートを保存する</button>
-  </div>
 
-  <div style="background:var(--primary-xlight);border:1px solid var(--primary-light);border-radius:var(--radius-md);padding:14px;font-size:12px;color:var(--text-mid);line-height:1.9;margin-top:8px;">
-    📬 <strong>送信タイミング</strong><br>
-    ・<strong>受付メール</strong>：WEBフォームから予約リクエスト送信時（自動）<br>
-    ・<strong>確定メール</strong>：管理画面で「確定」ボタンを押した時（自動）<br>
-    ・<strong>不可メール</strong>：管理画面で「不可」ボタンを押した時（自動）<br>
-    ・<strong>リマインドメール</strong>：撮影日の3日前（GASトリガーで自動）<br>
-    <span style="font-size:11px;color:var(--text-light);">※ LINE通知を選択されたお客様にはLINEで通知されます。</span>
-  </div>
-</div>
+    <!-- 友達紹介タブ -->
+    <div id="memberTabReferral" class="member-screen">
+      <div class="referral-panel">
+        <div style="font-size:13px;font-weight:600;color:#444;margin-bottom:6px;">あなたの紹介コード</div>
+        <div id="referralCodeDisplay" class="referral-code">読込中...</div>
+        <button onclick="shareReferral()" style="width:100%;padding:12px;background:#68c0d3;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">LINEで友達に紹介する 💌</button>
+      </div>
+      <div style="background:#f8f8f8;border-radius:12px;padding:14px;font-size:12px;color:#888;line-height:1.8;">
+        <strong style="color:#555;">友達紹介のしくみ</strong><br>
+        あなたの紹介コードで友達が会員登録すると、<strong style="color:#68c0d3;">500pt（500円分）</strong> がプレゼントされます！<br>
+        紹介できる人数に上限はありません。
+      </div>
+    </div>
 
-<!-- 進捗管理 -->
-<div class="tab-content" id="tab-progress">
-  <div class="section-title">進捗管理</div>
-  <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;">確定済み予約の撮影進捗を管理します。</div>
+    <!-- フォトデータタブ -->
+    <div id="memberTabPhotos" class="member-screen">
+      <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:4px;">📁 フォトデータ</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:16px;line-height:1.7;">撮影データが準備できるとここに表示されます。</div>
+      <div id="photoDataList">
+        <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
+      </div>
+    </div>
 
-  <!-- フィルター -->
-  <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
-    <button class="prog-filter-btn active" onclick="filterProgress('all',this)">すべて</button>
-    <button class="prog-filter-btn" onclick="filterProgress('撮影待ち',this)">撮影待ち</button>
-    <button class="prog-filter-btn" onclick="filterProgress('撮影済み',this)">撮影済み</button>
-    <button class="prog-filter-btn" onclick="filterProgress('編集中',this)">編集中</button>
-    <button class="prog-filter-btn" onclick="filterProgress('納品完了',this)">納品完了</button>
-  </div>
+    <!-- 注文モーダル（フォトアイテム） -->
+    <div id="orderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;overflow-y:auto;">
+      <div style="background:#f8f9fa;border-radius:20px 20px 0 0;padding:20px 16px 40px;margin-top:60px;min-height:calc(100vh - 60px);">
+        <!-- ヘッダー -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:15px;font-weight:700;color:#333;">🛍 フォトアイテムを注文</div>
+          <button onclick="closeOrderModal()" style="background:none;border:none;font-size:22px;color:#aaa;cursor:pointer;">✕</button>
+        </div>
 
-  <div id="progressList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-</div>
+        <!-- STEP1: 写真選択 -->
+        <div id="orderStep1">
+          <div style="font-size:12px;font-weight:600;color:#68c0d3;margin-bottom:10px;">STEP 1　注文したい写真を選んでください（複数可）</div>
+          <div id="thumbGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;"></div>
+          <div id="noThumbMsg" style="display:none;text-align:center;padding:30px;color:#bbb;font-size:13px;">
+            <div style="font-size:28px;margin-bottom:8px;">📷</div>
+            写真が登録されていません
+          </div>
+          <button onclick="goOrderStep2()" style="width:100%;padding:13px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">次へ →</button>
+        </div>
 
-<!-- 会員管理 -->
-<div class="tab-content" id="tab-members">
-  <div class="section-title">会員管理</div>
-  <div id="memberList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-</div>
+        <!-- STEP2: 商品選択 -->
+        <div id="orderStep2" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <button onclick="backOrderStep1()" style="background:none;border:none;color:#68c0d3;font-size:14px;cursor:pointer;">← 戻る</button>
+            <div style="font-size:12px;font-weight:600;color:#68c0d3;">STEP 2　商品を選んでください</div>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px;">選択した写真：<span id="selectedPhotoNums" style="color:#68c0d3;font-weight:600;"></span></div>
+          <div id="shopItemGrid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+          <button onclick="goOrderStep3()" style="width:100%;padding:13px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">次へ →</button>
+        </div>
 
-<!-- クーポン管理 -->
-<div class="tab-content" id="tab-coupons">
-  <div class="section-title">クーポン発行</div>
+        <!-- STEP3: 確認・受け取り方法 -->
+        <div id="orderStep3" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <button onclick="backOrderStep2()" style="background:none;border:none;color:#68c0d3;font-size:14px;cursor:pointer;">← 戻る</button>
+            <div style="font-size:12px;font-weight:600;color:#68c0d3;">STEP 3　受け取り方法・確認</div>
+          </div>
 
-  <div class="add-form">
-    <div class="form-group">
-      <label>対象会員（lineUserId）</label>
-      <input type="text" id="couponUserId" placeholder="lineUserId を入力（または空欄で全員）">
-    </div>
-    <div class="form-group">
-      <label>クーポン名</label>
-      <input type="text" id="couponName" placeholder="例：初回割引クーポン">
-    </div>
-    <div class="form-group">
-      <label>割引内容</label>
-      <input type="text" id="couponDiscount" placeholder="例：10%OFF　または　500円OFF">
-    </div>
-    <div class="form-group">
-      <label>有効期限（任意）</label>
-      <input type="date" id="couponExpiry">
-    </div>
-    <button class="btn-primary" onclick="issueCoupon()">クーポンを発行する</button>
-  </div>
+          <!-- 注文内容サマリー -->
+          <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:10px;">📋 注文内容</div>
+            <div id="orderSummary" style="font-size:12px;color:#555;line-height:2;"></div>
+            <div style="border-top:1px solid #f0f0f0;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;">
+              <span style="font-size:13px;color:#444;font-weight:600;">合計</span>
+              <div style="text-align:right;">
+                <div id="orderTotalOrig" style="font-size:11px;color:#aaa;text-decoration:line-through;"></div>
+                <div id="orderTotal" style="font-size:18px;font-weight:700;color:#68c0d3;"></div>
+              </div>
+            </div>
+          </div>
 
-  <div class="section-title" style="margin-top:8px;">発行済みクーポン一覧</div>
-  <div id="couponList"><div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div></div>
-</div>
+          <!-- 受け取り方法 -->
+          <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:10px;">📦 受け取り方法</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <button id="delBtn_store" onclick="selectDelivery('店頭受け取り')"
+                style="flex:1;padding:10px;border:2px solid #68c0d3;border-radius:10px;background:#f0fafb;color:#4a9db0;font-size:12px;font-weight:600;cursor:pointer;">
+                🏠 店頭受け取り
+              </button>
+              <button id="delBtn_mail" onclick="selectDelivery('郵送')"
+                style="flex:1;padding:10px;border:2px solid #ddd;border-radius:10px;background:#fff;color:#aaa;font-size:12px;cursor:pointer;">
+                📮 郵送
+              </button>
+            </div>
+            <div id="addressField" style="display:none;">
+              <textarea id="orderAddress" placeholder="郵便番号・住所・お名前を入力してください" rows="3"
+                style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;box-sizing:border-box;resize:none;"></textarea>
+            </div>
+          </div>
 
-<!-- WEBフォーム設定 -->
-<div class="tab-content" id="tab-webform">
-  <div class="add-form">
-    <div class="section-title">フォームの表示設定</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;line-height:1.8;">
-      WEBサイトに埋め込む予約フォームのタイトルと説明文を設定します。
-    </div>
-    <div class="form-group">
-      <label>フォームタイトル</label>
-      <input type="text" id="wfTitle" placeholder="例：撮影のご予約" value="撮影日のご予約">
-    </div>
-    <div class="form-group">
-      <label>サブタイトル（任意）</label>
-      <input type="text" id="wfSubtitle" placeholder="例：ご希望のメニューと日時をお選びください">
-    </div>
-    <div class="form-group">
-      <label>完了メッセージ（LINE通知用）</label>
-      <textarea id="wfCompleteMsgLine" rows="3">予約リクエストを受け付けました。
-店舗にて確認後、LINEにてご連絡いたします。
+          <!-- 備考 -->
+          <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:8px;">📝 備考（任意）</div>
+            <textarea id="orderNote" placeholder="仕上がりの希望など" rows="2"
+              style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;box-sizing:border-box;resize:none;"></textarea>
+          </div>
 
-確定連絡をもって正式な予約となります。
-しばらくお待ちください。</textarea>
-    </div>
-    <div class="form-group">
-      <label>完了メッセージ（メール通知用）</label>
-      <textarea id="wfCompleteMsgEmail" rows="3">予約リクエストを受け付けました。
-店舗にて確認後、ご登録のメールアドレスにご連絡いたします。
+          <button onclick="proceedToSquare()" style="width:100%;padding:14px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">
+            💳 Square で決済する
+          </button>
+          <div style="font-size:10px;color:#bbb;text-align:center;margin-top:8px;">Squareの決済ページに移動します</div>
+        </div>
 
-確定連絡をもって正式な予約となります。
-しばらくお待ちください。</textarea>
+      </div>
     </div>
-    <button class="btn-primary" onclick="saveWebFormSettings()">設定を保存する</button>
-  </div>
 
-  <div class="section-title" style="margin-top:4px;">メニュー・質問項目</div>
-  <div style="padding:0 0 8px;">
-    <div style="background:var(--primary-xlight);border:1px solid var(--primary-light);border-radius:var(--radius-md);padding:16px;font-size:13px;color:var(--text-mid);line-height:1.9;">
-      📋 WEBフォームのメニューは <strong>「メニュー設定」タブ</strong> で管理できます。<br>
-      ❓ 質問項目は <strong>「共通質問」タブ</strong> および <strong>各メニューの「メニュー別質問」</strong> で管理できます。<br>
-      <span style="font-size:11px;color:var(--text-light);">※ LIFFアプリ（LINE予約）とWEBフォームで同じ設定が共有されます。</span>
+    <!-- 撮影予約タブ -->
+    <div id="memberTabBookings" class="member-screen">
+      <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:4px;">📋 撮影予約</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:16px;line-height:1.7;">ご予約の確認・撮影資料・データ受け取りはこちらから。</div>
+      <div id="bookingList">
+        <div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>
+      </div>
     </div>
-  </div>
 
-  <div class="section-title" style="margin-top:16px;">WordPressへの埋め込みコード</div>
-  <div style="padding:0 0 8px;">
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:10px;line-height:1.8;">
-      WordPressの固定ページやブロックエディタに以下のコードを貼り付けてください。
-    </div>
-    <div style="background:#1e2d35;border-radius:var(--radius-md);padding:16px;position:relative;">
-      <button onclick="copyEmbedCode()" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;">コピー</button>
-      <pre id="embedCodePre" style="color:#a8d8e8;font-size:12px;line-height:1.8;white-space:pre-wrap;font-family:monospace;overflow-x:auto;">&lt;iframe
-  src="https://studiotsuzuri25-debug.github.io/tsuzuri-reservation/web-form.html"
-  width="100%"
-  height="800"
-  frameborder="0"
-  style="border:none;border-radius:16px;max-width:600px;display:block;margin:0 auto;"
-  title="studio TSUZURI 予約フォーム"
-&gt;&lt;/iframe&gt;</pre>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--text-light);line-height:1.8;">
-      💡 <strong>Gutenbergの場合</strong>：「カスタムHTML」ブロックを追加して貼り付け<br>
-      💡 <strong>クラシックエディタの場合</strong>：「テキスト」タブに切り替えて貼り付け<br>
-      💡 高さは内容に合わせて <code>height="800"</code> の数値を調整してください
-    </div>
-  </div>
+    <!-- ガイドタブ -->
+    <div id="memberTabGuide" class="member-screen">
 
-  <div class="section-title" style="margin-top:16px;">フォームのプレビュー</div>
-  <div style="padding:0 0 24px;">
-    <a href="https://studiotsuzuri25-debug.github.io/tsuzuri-reservation/web-form.html" target="_blank"
-       style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 18px;font-size:13px;color:var(--primary-dark);text-decoration:none;font-weight:500;">
-      🔗 WEBフォームを新しいタブで開く
-    </a>
-  </div>
-</div>
+      <!-- ポイントのしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">⭐</span> ポイントのしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;">
+          撮影ご利用ごとにポイントが貯まります。<br>
+          貯まったポイントは <strong style="color:#68c0d3;">1pt = 1円</strong> として、クーポンに交換してご利用いただけます。
+        </div>
+        <div style="background:#f8fcfd;border-radius:10px;padding:12px;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:12px;">
+            <span style="color:#666;">📷 撮影ご利用</span>
+            <span style="font-weight:700;color:#68c0d3;">＋ポイント付与</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:12px;">
+            <span style="color:#666;">👫 友達紹介（紹介した方）</span>
+            <span style="font-weight:700;color:#68c0d3;">＋500pt</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:12px;">
+            <span style="color:#666;">🎉 友達紹介（紹介された方）</span>
+            <span style="font-weight:700;color:#68c0d3;">＋500pt</span>
+          </div>
+        </div>
+      </div>
 
-<!-- 共通質問編集モーダル -->
-<div class="modal-overlay" id="editQuestionModal">
-  <div class="modal">
-    <div class="modal-title">質問を編集</div>
-    <input type="hidden" id="editQId">
-    <div class="form-group"><label>質問文</label><input type="text" id="editQQuestion"></div>
-    <div class="form-group">
-      <label>回答形式</label>
-      <select id="editQType" onchange="toggleOptionsField('editQOptions', 'editQType')">
-        <option value="テキスト">テキスト入力</option>
-        <option value="プルダウン">プルダウン選択</option>
-        <option value="ラジオ">ラジオボタン</option>
-        <option value="チェック">チェックボックス</option>
-      </select>
-    </div>
-    <div class="form-group" id="editQOptionsWrap">
-      <label>選択肢（カンマ区切り）</label>
-      <input type="text" id="editQOptions">
-    </div>
-    <div class="form-group"><label>必須 / 任意</label><select id="editQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
-    <div class="form-group"><label>表示状態</label><select id="editQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveCommonQuestion()" style="flex:1;">保存する</button>
-      <button class="btn-secondary" onclick="closeModal('editQuestionModal')">キャンセル</button>
-    </div>
+      <!-- ポイント交換のしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">💫</span> ポイント交換のしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;margin-bottom:10px;">
+          500ptが貯まったら、500円割引クーポンに交換できます。<br>
+          交換は「クーポン」タブから行えます。
+        </div>
+        <div style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:center;gap:12px;">
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#68c0d3;">500pt</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px;">貯める</div>
+          </div>
+          <div style="font-size:18px;color:#b0d8e3;">→</div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#e07a9a;">500円OFF</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px;">クーポン（90日有効）</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#bbb;margin-top:10px;text-align:center;">
+          500ptを超えて貯めてから交換することもできます
+        </div>
+      </div>
+
+      <!-- ランクのしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">🏅</span> ランクのしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:1.8;margin-bottom:12px;">
+          撮影回数に応じてランクアップ！ランクが上がるほど特典が充実します。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;background:#f8f8f8;border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">🤍</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#888;">REGULAR</div>
+              <div style="font-size:11px;color:#bbb;">登録〜1回</div>
+            </div>
+            <div style="font-size:11px;color:#bbb;text-align:right;">—</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f4f4f4,#ebebeb);border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">🥈</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#777;">SILVER</div>
+              <div style="font-size:11px;color:#bbb;">撮影2回〜</div>
+            </div>
+            <div style="font-size:11px;color:#999;text-align:right;">優先予約</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#fdf5e4,#fae8c0);border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">🥇</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#c9a84c;">GOLD</div>
+              <div style="font-size:11px;color:#bbb;">撮影5回〜</div>
+            </div>
+            <div style="font-size:11px;color:#c9a84c;text-align:right;">優先予約<br>データ延長保管</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f0f4ff,#dce6ff);border-radius:10px;padding:10px 14px;">
+            <span style="font-size:22px;width:28px;text-align:center;">💎</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#6a7fc8;">PLATINUM</div>
+              <div style="font-size:11px;color:#bbb;">撮影10回〜</div>
+            </div>
+            <div style="font-size:11px;color:#6a7fc8;text-align:right;">優先予約<br>データ延長保管<br>特別割引クーポン</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 誕生日クーポン -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">🎂</span> 誕生日クーポン
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;">
+          お誕生日当日に特別クーポンをLINEでお届けします🎁<br>
+          クーポンは「クーポン」タブからご確認ください。<br>
+          ご利用の際はご予約時またはスタッフにお申し出ください。
+        </div>
+      </div>
+
+      <!-- 友達紹介のしくみ -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;">👫</span> 友達紹介のしくみ
+        </div>
+        <div style="font-size:12px;color:#666;line-height:2;">
+          「友達紹介」タブにある紹介コードを友達に送ってください。<br>
+          友達が紹介コードを入力して会員登録すると、<strong style="color:#68c0d3;">あなたにも友達にも500pt</strong>プレゼント！<br>
+          紹介できる人数に上限はありません。
+        </div>
+      </div>
+
+      <!-- お問い合わせ -->
+      <div style="background:#f8fcfd;border-radius:12px;padding:16px;font-size:11px;color:#aaa;text-align:center;line-height:2;">
+        ポイント・クーポンについてご不明な点は<br>
+        LINEメッセージよりお気軽にお問い合わせください 📩<br>
+        <span style="color:#68c0d3;font-weight:600;">studio TSUZURI</span>
+      </div>
+
+    </div><!-- /memberTabGuide -->
   </div>
 </div>
-
-<!-- メニュー編集モーダル -->
-<div class="modal-overlay" id="editMenuModal">
-  <div class="modal">
-    <div class="modal-title">メニューを編集</div>
-    <input type="hidden" id="editMenuId">
-    <div class="form-group"><label>メニュー名</label><input type="text" id="editMenuName"></div>
-    <div class="form-group"><label>説明（任意）</label><input type="text" id="editMenuDesc"></div>
-    <div class="form-group"><label>表示状態</label><select id="editMenuEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveMenu()" style="flex:1;">保存する</button>
-      <button class="btn-secondary" onclick="closeModal('editMenuModal')">キャンセル</button>
-    </div>
-  </div>
-</div>
-
-<!-- メニュー制限追加モーダル -->
-<div class="modal-overlay" id="addRestrictionModal">
-  <div class="modal">
-    <div class="modal-title" id="addRTitle">受付制限を追加</div>
-    <input type="hidden" id="addRMenuId">
-    <div class="form-group">
-      <label>制限タイプ</label>
-      <select id="addRType" onchange="toggleRestrictionFields()">
-        <option value="曜日不可">曜日不可（特定曜日を受付しない）</option>
-        <option value="曜日のみ可">曜日のみ可（特定曜日だけ受付）</option>
-        <option value="日付不可">日付不可（特定日を受付しない）</option>
-        <option value="時間枠制限">時間枠制限（受付できる時間枠を限定）</option>
-      </select>
-    </div>
-    <div class="form-group" id="addRDowWrap">
-      <label>曜日</label>
-      <select id="addRDow">
-        <option value="0">日曜日</option>
-        <option value="1">月曜日</option>
-        <option value="2">火曜日</option>
-        <option value="3">水曜日</option>
-        <option value="4">木曜日</option>
-        <option value="5">金曜日</option>
-        <option value="6">土曜日</option>
-      </select>
-    </div>
-    <div class="form-group" id="addRDateWrap" style="display:none;">
-      <label>日付</label>
-      <input type="date" id="addRDate">
-    </div>
-    <div class="form-group" id="addRSlotsWrap" style="display:none;">
-      <label>受付できる時間枠（複数選択可）</label>
-      <div id="addRSlotGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;"></div>
-    </div>
-    <div class="form-group">
-      <label>備考（任意）</label>
-      <input type="text" id="addRNote" placeholder="例：お宮参りは午前中のみ">
-    </div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveRestriction()" style="flex:1;">追加する</button>
-      <button class="btn-secondary" onclick="closeModal('addRestrictionModal')">キャンセル</button>
-    </div>
-  </div>
-</div>
-
-<!-- メニュー別質問追加モーダル -->
-<div class="modal-overlay" id="addMenuQuestionModal">
-  <div class="modal">
-    <div class="modal-title" id="addMQTitle">質問を追加</div>
-    <input type="hidden" id="addMQMenuId">
-    <div class="form-group"><label>質問文</label><input type="text" id="addMQQuestion" placeholder="例：お子様の年齢は？"></div>
-    <div class="form-group">
-      <label>回答形式</label>
-      <select id="addMQType" onchange="toggleOptionsField('addMQOptions', 'addMQType')">
-        <option value="テキスト">テキスト入力</option>
-        <option value="プルダウン">プルダウン選択</option>
-        <option value="ラジオ">ラジオボタン</option>
-        <option value="チェック">チェックボックス</option>
-      </select>
-    </div>
-    <div class="form-group" id="addMQOptionsWrap" style="display:none;">
-      <label>選択肢（カンマ区切り）</label>
-      <input type="text" id="addMQOptions" placeholder="例：0歳,1歳,2歳,3歳以上">
-      <div class="options-hint">カンマ（,）で区切って入力してください</div>
-    </div>
-    <div class="form-group"><label>必須 / 任意</label><select id="addMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveMenuQuestion()" style="flex:1;">追加する</button>
-      <button class="btn-secondary" onclick="closeModal('addMenuQuestionModal')">キャンセル</button>
-    </div>
-  </div>
-</div>
-
-<!-- メニュー別質問編集モーダル -->
-<div class="modal-overlay" id="editMenuQuestionModal">
-  <div class="modal">
-    <div class="modal-title">質問を編集</div>
-    <input type="hidden" id="editMQId">
-    <div class="form-group"><label>質問文</label><input type="text" id="editMQQuestion"></div>
-    <div class="form-group">
-      <label>回答形式</label>
-      <select id="editMQType" onchange="toggleOptionsField('editMQOptions', 'editMQType')">
-        <option value="テキスト">テキスト入力</option>
-        <option value="プルダウン">プルダウン選択</option>
-        <option value="ラジオ">ラジオボタン</option>
-        <option value="チェック">チェックボックス</option>
-      </select>
-    </div>
-    <div class="form-group" id="editMQOptionsWrap">
-      <label>選択肢（カンマ区切り）</label>
-      <input type="text" id="editMQOptions">
-    </div>
-    <div class="form-group"><label>必須 / 任意</label><select id="editMQRequired"><option value="任意">任意</option><option value="必須">必須</option></select></div>
-    <div class="form-group"><label>表示状態</label><select id="editMQEnabled"><option value="有効">有効</option><option value="無効">無効</option></select></div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveMenuQuestionEdit()" style="flex:1;">保存する</button>
-      <button class="btn-secondary" onclick="closeModal('editMenuQuestionModal')">キャンセル</button>
-    </div>
+<!-- 時間枠シート -->
+<div class="sheet-overlay" id="timeSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle"></div>
+    <div class="time-grid" id="timeGrid"></div>
+    <button class="sheet-cancel" onclick="closeTimeSheet()">キャンセル</button>
   </div>
 </div>
 
 <script>
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxn4C3CA9LMiexP5dHL3-_3ixpIfnbLgU1kisdxuzM3TaIPmMk_uhCSigXPNhJ6jEg/exec';
+  const LIFF_ID = '2009277586-pDtkyCOn';
+
+  const HOLIDAYS = [
+    '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
+    '2026-03-20','2026-04-29','2026-05-03','2026-05-04',
+    '2026-05-05','2026-05-06','2026-07-20','2026-08-11',
+    '2026-09-21','2026-09-22','2026-09-23','2026-10-12',
+    '2026-11-03','2026-11-23','2026-12-23',
+  ];
   const TIME_SLOTS = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 
-  let adminYear, adminMonth;
-  let allReservations = [], allSchedule = [], allMenus = [], allMenuQuestions = [], allCommonQuestions = [], allRestrictions = [];
-  let allClosedSettings = [];
-
-  // ==========================================
-  // グローバルローディング
-  // ==========================================
-  function showLoading(text) {
-    document.getElementById('globalLoadingText').textContent = text || '処理中...';
-    document.getElementById('globalLoading').classList.add('active');
-  }
-  function hideLoading() {
-    document.getElementById('globalLoading').classList.remove('active');
-  }
-
-  // ==========================================
-  // カレンダーモーダル
-  // ==========================================
-  let calTargetId = null;
-  let calYear, calMonth, calSelectedDate;
-
-  function openCalModal(targetId) {
-    calTargetId = targetId;
-    const today = new Date();
-    calYear = today.getFullYear();
-    calMonth = today.getMonth() + 1;
-    calSelectedDate = document.getElementById(targetId).value || null;
-    renderCalModal();
-    document.getElementById('calModalOverlay').classList.add('active');
-  }
-
-  function calClose() {
-    document.getElementById('calModalOverlay').classList.remove('active');
-    calTargetId = null;
-  }
-
-  function calConfirm() {
-    if (!calSelectedDate) { alert('日付を選択してください。'); return; }
-    if (calTargetId) {
-      document.getElementById(calTargetId).value = calSelectedDate;
-      // 表示用ラベルを更新
-      const displayId = calTargetId + 'Display';
-      const el = document.getElementById(displayId);
-      if (el) {
-        const d = new Date(calSelectedDate + 'T00:00:00');
-        const w = ['日','月','火','水','木','金','土'][d.getDay()];
-        el.textContent = `${calSelectedDate}（${w}）`;
-        el.classList.remove('date-placeholder');
-      }
-    }
-    calClose();
-  }
-
-  function calChangeMonth(delta) {
-    calMonth += delta;
-    if (calMonth > 12) { calMonth = 1; calYear++; }
-    if (calMonth < 1) { calMonth = 12; calYear--; }
-    renderCalModal();
-  }
-
-  function renderCalModal() {
-    const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-    document.getElementById('calModalMonthLabel').textContent = `${calYear}年 ${monthNames[calMonth-1]}`;
-    const grid = document.getElementById('calModalGrid');
-    grid.innerHTML = '';
-    // ヘッダー
-    ['日','月','火','水','木','金','土'].forEach((d, i) => {
-      const el = document.createElement('div');
-      el.className = `cal-dh${i===0?' sun':i===6?' sat':''}`;
-      el.textContent = d;
-      grid.appendChild(el);
-    });
-    const firstDay = new Date(calYear, calMonth-1, 1).getDay();
-    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    // 空白
-    for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-    // 日付
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const thisDate = new Date(calYear, calMonth-1, d);
-      const dow = thisDate.getDay();
-      const isPast = thisDate < today;
-      const isToday = thisDate.getTime() === today.getTime();
-      const isSelected = dateStr === calSelectedDate;
-      const el = document.createElement('div');
-      el.className = `cal-day${dow===0?' sun':dow===6?' sat':''}${isPast?' past':''}${isToday?' today':''}${isSelected?' selected':''}`;
-      el.textContent = d;
-      if (!isPast) {
-        el.onclick = () => {
-          calSelectedDate = dateStr;
-          renderCalModal();
-        };
-      }
-      grid.appendChild(el);
-    }
-  }
-
-  // ==========================================
-  // 不可日設定
-  // ==========================================
-  function toggleClosedTimeSlot() {
-    const type = document.getElementById('closedType').value;
-    const wrap = document.getElementById('closedSlotWrap');
-    wrap.style.display = type === 'slot' ? 'block' : 'none';
-    if (type === 'slot') renderClosedSlotGrid();
-  }
-
-  function renderClosedSlotGrid() {
-    const grid = document.getElementById('closedSlotGrid');
-    grid.innerHTML = TIME_SLOTS.map(t =>
-      `<div class="closed-slot-item" id="cslot_${t.replace(':','')}" onclick="toggleClosedSlotItem(this)">${t}</div>`
-    ).join('');
-  }
-
-  function toggleClosedSlotItem(el) {
-    el.classList.toggle('selected');
-  }
-
-  function getSelectedClosedSlots() {
-    return TIME_SLOTS.filter(t => {
-      const el = document.getElementById('cslot_' + t.replace(':',''));
-      return el && el.classList.contains('selected');
-    });
-  }
-
-  function loadClosedSettings() {
-    return new Promise((resolve) => {
-      const cb = 'cb_closed_' + Date.now();
-      const s = document.createElement('script');
-      window[cb] = (json) => {
-        allClosedSettings = json.data || [];
-        renderClosedList();
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb]; resolve();
-      };
-      s.src = `${GAS_URL}?action=getClosedSettings&callback=${cb}`;
-      s.onerror = () => {
-        allClosedSettings = [];
-        renderClosedList();
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb]; resolve();
-      };
-      document.body.appendChild(s);
-    });
-  }
-
-  function renderClosedList() {
-    const list = document.getElementById('closedList');
-    if (!allClosedSettings || allClosedSettings.length === 0) {
-      list.innerHTML = '<div class="empty">不可設定はありません</div>';
-      return;
-    }
-    const sorted = [...allClosedSettings].sort((a, b) => (a.date > b.date ? 1 : -1));
-    list.innerHTML = sorted.map(c => {
-      const d = new Date(c.date + 'T00:00:00');
-      const w = ['日','月','火','水','木','金','土'][d.getDay()];
-      const isAllday = c.type === 'allday' || !c.slots || c.slots.length === 0;
-      return `
-        <div class="closed-card">
-          <div class="closed-card-header">
-            <div class="closed-date-label">${c.date}（${w}）</div>
-            <button class="btn-small danger" onclick="deleteClosedSetting('${c.id}')">削除</button>
-          </div>
-          <div class="closed-type-badge">${isAllday ? '終日不可' : '時間枠不可'}</div>
-          ${!isAllday ? `<div class="closed-slots-label">不可枠：${c.slots.join('、')}</div>` : ''}
-          ${c.note ? `<div class="closed-note">📝 ${c.note}</div>` : ''}
-        </div>`;
-    }).join('');
-  }
-
-  async function addClosedSetting() {
-    const date = document.getElementById('closedDate').value;
-    if (!date) { alert('日付を選択してください。'); return; }
-    const type = document.getElementById('closedType').value;
-    const note = document.getElementById('closedNote').value.trim();
-    let slots = [];
-    if (type === 'slot') {
-      slots = getSelectedClosedSlots();
-      if (slots.length === 0) { alert('不可にする時間枠を1つ以上選択してください。'); return; }
-    }
-    showLoading('不可設定を登録中...');
-    try {
-      const json = await gasPost('addClosedSetting', { date, type, slots: slots.join(','), note });
-      hideLoading();
-      if (json.status === 'success') {
-        // フォームリセット
-        document.getElementById('closedDate').value = '';
-        document.getElementById('closedDateDisplay').textContent = '日付を選択してください';
-        document.getElementById('closedDateDisplay').classList.add('date-placeholder');
-        document.getElementById('closedNote').value = '';
-        document.getElementById('closedType').value = 'allday';
-        document.getElementById('closedSlotWrap').style.display = 'none';
-        await loadClosedSettings();
-        renderAdminCalendar();
-      } else {
-        alert('エラーが発生しました。GAS側にaddClosedSetting処理が必要です。');
-      }
-    } catch(e) {
-      hideLoading();
-      alert('通信エラーが発生しました。');
-    }
-  }
-
-  async function deleteClosedSetting(id) {
-    if (!confirm('この不可設定を削除しますか？')) return;
-    showLoading('削除中...');
-    try {
-      const json = await gasPost('deleteClosedSetting', { id });
-      hideLoading();
-      if (json.status === 'success') {
-        await loadClosedSettings();
-        renderAdminCalendar();
-      } else {
-        alert('エラーが発生しました。');
-      }
-    } catch(e) {
-      hideLoading();
-      alert('通信エラーが発生しました。');
-    }
-  }
-
-  // ==========================================
-  // タブ・共通
-  // ==========================================
-  function switchTab(name, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById(`tab-${name}`).classList.add('active');
-  }
-
-  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-  function toggleOptionsField(optionsId, typeId) {
-    const type = document.getElementById(typeId).value;
-    const wrap = document.getElementById(optionsId + 'Wrap');
-    if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(type) ? 'block' : 'none';
-  }
-
-
-  // ==========================================
-  // メールテンプレート
-  // ==========================================
-  let emailTemplates = {};
-  let currentEmailTmplKey = '受付';
-  let activeEmailField = null; // 現在フォーカス中のフィールド要素
-
-  const EMAIL_TMPL_DESCS = {
-    '受付':     'WEBフォームから予約リクエストが送信されたとき、お客様へ自動送信されます。',
-    '確定':     '管理画面で「確定」ボタンを押したとき、お客様へ自動送信されます。',
-    '不可':     '管理画面で「不可」ボタンを押したとき、お客様へ自動送信されます。',
-    'リマインド': '撮影日の3日前にGASトリガーによって自動送信されます。',
-  };
-
-  // 固定の差し込み変数定義
-  const FIXED_VARS = [
-    { label: 'お名前',   var: '{{name}}' },
-    { label: '撮影日',   var: '{{date}}' },
-    { label: '時間枠',   var: '{{time}}' },
-    { label: 'メニュー', var: '{{menu}}' },
-    { label: '人数',     var: '{{count}}' },
-    { label: '電話番号', var: '{{phone}}' },
-    { label: '全回答',   var: '{{answers}}' },
-  ];
-
-  function setActiveEmailField(el, label) {
-    activeEmailField = el;
-    const ind = document.getElementById('activeFieldIndicator');
-    if (ind) ind.textContent = '✎ 挿入先：' + label;
-  }
-
-  function insertVar(varStr) {
-    // フィールドが選択されていない場合は本文に挿入
-    if (!activeEmailField) {
-      activeEmailField = document.getElementById('emailTmplBody');
-      const ind = document.getElementById('activeFieldIndicator');
-      if (ind) ind.textContent = '✎ 挿入先：本文';
-    }
-    const el = activeEmailField;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const val = el.value;
-    el.value = val.slice(0, start) + varStr + val.slice(end);
-    // カーソルを挿入後に移動
-    const newPos = start + varStr.length;
-    el.selectionStart = newPos;
-    el.selectionEnd = newPos;
-    el.focus();
-  }
-
-  function renderVarButtons() {
-    // 固定ボタン
-    const fixedWrap = document.getElementById('varBtnsFixed');
-    if (!fixedWrap) return;
-    fixedWrap.innerHTML = FIXED_VARS.map(v =>
-      `<button class="var-btn" onclick="insertVar('${v.var}')">${v.label}</button>`
-    ).join('');
-
-    // 動的ボタン（質問から生成）
-    const dynWrap = document.getElementById('varBtnsDynamic');
-    if (!dynWrap) return;
-    const sections = [];
-
-    // 共通質問
-    const cqBtns = (allCommonQuestions || []).map((q, i) =>
-      `<button class="var-btn" onclick="insertVar('{{cq_${i}}}')" title="${q.question}">${q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question}</button>`
-    );
-    if (cqBtns.length > 0) {
-      sections.push(
-        `<div class="var-section-label">● 共通質問</div>` +
-        `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;">${cqBtns.join('')}</div>`
-      );
-    }
-
-    // メニュー別質問（allMenuQuestionsから）
-    if (allMenuQuestions && allMenuQuestions.length > 0) {
-      // メニューIDごとにグループ化
-      const byMenu = {};
-      allMenuQuestions.forEach(q => {
-        if (!byMenu[q.menuId]) byMenu[q.menuId] = { menuName: q.menuName || q.menuId, questions: [] };
-        byMenu[q.menuId].questions.push(q);
-      });
-      Object.keys(byMenu).forEach(menuId => {
-        const group = byMenu[menuId];
-        const btns = group.questions.map((q, i) =>
-          `<button class="var-btn" onclick="insertVar('{{mq_${menuId}_${i}}}')" title="${q.question}">${q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question}</button>`
-        );
-        if (btns.length > 0) {
-          sections.push(
-            `<div class="var-section-label">● ${group.menuName}の質問</div>` +
-            `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;">${btns.join('')}</div>`
-          );
-        }
-      });
-    }
-
-    dynWrap.innerHTML = sections.join('');
-  }
-
-  // メールタブが開いている場合のみボタン再描画（質問追加・削除時に自動呼び出し）
-  function refreshVarButtonsIfOpen() {
-    const emailTab = document.getElementById('tab-email');
-    if (emailTab && emailTab.classList.contains('active')) {
-      renderVarButtons();
-    }
-  }
-
-  function loadEmailTemplates() {
-    // 毎回最新の質問リストを反映するため常にボタン再描画
-    renderVarButtons();
-    if (Object.keys(emailTemplates).length > 0) {
-      renderEmailTemplate(currentEmailTmplKey);
-      return;
-    }
-    const cb = 'cb_etmpl_' + Date.now();
-    const s = document.createElement('script');
-    window[cb] = (json) => {
-      if (document.body.contains(s)) document.body.removeChild(s);
-      delete window[cb];
-      if (json.status === 'success') {
-        emailTemplates = json.data;
-        renderEmailTemplate(currentEmailTmplKey);
-      }
-    };
-    s.src = GAS_URL + '?action=getEmailTemplates&callback=' + cb;
-    s.onerror = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; };
-    document.body.appendChild(s);
-  }
-
-  function switchEmailTab(key, el) {
-    currentEmailTmplKey = key;
-    document.querySelectorAll('.email-tmpl-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    renderEmailTemplate(key);
-  }
-
-  function renderEmailTemplate(key) {
-    const tmpl = emailTemplates[key] || { subject: '', body: '' };
-    document.getElementById('emailTmplKey').value = key;
-    document.getElementById('emailTmplSubject').value = tmpl.subject || '';
-    document.getElementById('emailTmplBody').value = tmpl.body || '';
-    document.getElementById('emailTmplDesc').textContent = EMAIL_TMPL_DESCS[key] || '';
-    // デフォルトのフォーカスを本文に設定
-    activeEmailField = document.getElementById('emailTmplBody');
-    const ind = document.getElementById('activeFieldIndicator');
-    if (ind) ind.textContent = '✎ 挿入先：本文';
-  }
-
-  async function saveEmailTemplate() {
-    const key = document.getElementById('emailTmplKey').value;
-    const subject = document.getElementById('emailTmplSubject').value.trim();
-    const body = document.getElementById('emailTmplBody').value.trim();
-    if (!subject) { alert('件名を入力してください。'); return; }
-    if (!body) { alert('本文を入力してください。'); return; }
-    showLoading('保存しています...');
-    try {
-      const params = { key, subject, body };
-      const encoded = encodeURIComponent(JSON.stringify(params));
-      const cb = 'cb_etmpl_save_' + Date.now();
-      const json = await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        const timer = setTimeout(() => { reject(new Error('タイムアウト')); }, 10000);
-        window[cb] = (data) => { clearTimeout(timer); if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; resolve(data); };
-        s.src = GAS_URL + '?action=saveEmailTemplate&params=' + encoded + '&callback=' + cb;
-        s.onerror = () => { clearTimeout(timer); reject(new Error('通信エラー')); };
-        document.body.appendChild(s);
-      });
-      hideLoading();
-      if (json.status === 'success') {
-        emailTemplates[key] = { subject, body };
-        alert('✅ ' + key + 'メールのテンプレートを保存しました。');
-      } else {
-        alert('エラー: ' + (json.message || '不明'));
-      }
-    } catch(e) {
-      hideLoading();
-      alert('通信エラーが発生しました。');
-    }
-  }
-
-  // ==========================================
-  // WEBフォーム設定
-  // ==========================================
-  function loadWebFormSettings() {
-    return new Promise((resolve) => {
-      const cb = 'cb_wfs_' + Date.now();
-      const s = document.createElement('script');
-      window[cb] = (json) => {
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-        if (json.status === 'success' && json.data) {
-          const d = json.data;
-          if (d.title)            document.getElementById('wfTitle').value = d.title;
-          if (d.subtitle !== undefined) document.getElementById('wfSubtitle').value = d.subtitle;
-          if (d.completeMsgLine)  document.getElementById('wfCompleteMsgLine').value = d.completeMsgLine;
-          if (d.completeMsgEmail) document.getElementById('wfCompleteMsgEmail').value = d.completeMsgEmail;
-        }
-        resolve();
-      };
-      s.src = GAS_URL + '?action=getWebFormSettings&callback=' + cb;
-      s.onerror = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; resolve(); };
-      document.body.appendChild(s);
-    });
-  }
-
-  async function saveWebFormSettings() {
-    const params = {
-      title:            document.getElementById('wfTitle').value.trim(),
-      subtitle:         document.getElementById('wfSubtitle').value.trim(),
-      completeMsgLine:  document.getElementById('wfCompleteMsgLine').value.trim(),
-      completeMsgEmail: document.getElementById('wfCompleteMsgEmail').value.trim(),
-    };
-    if (!params.title) { alert('フォームタイトルを入力してください。'); return; }
-    showLoading('設定を保存しています...');
-    try {
-      const encoded = encodeURIComponent(JSON.stringify(params));
-      const cb = 'cb_wfs_save_' + Date.now();
-      const json = await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        const timer = setTimeout(() => { reject(new Error('タイムアウト')); }, 10000);
-        window[cb] = (data) => { clearTimeout(timer); if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; resolve(data); };
-        s.src = GAS_URL + '?action=saveWebFormSettings&params=' + encoded + '&callback=' + cb;
-        s.onerror = () => { clearTimeout(timer); reject(new Error('通信エラー')); };
-        document.body.appendChild(s);
-      });
-      hideLoading();
-      if (json.status === 'success') {
-        alert('✅ 設定を保存しました。');
-      } else {
-        alert('エラーが発生しました: ' + (json.message || '不明'));
-      }
-    } catch(e) {
-      hideLoading();
-      alert('通信エラーが発生しました。');
-    }
-  }
-
-  function copyEmbedCode() {
-    const pre = document.getElementById('embedCodePre');
-    const text = pre.innerText || pre.textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      alert('✅ 埋め込みコードをコピーしました。');
-    }).catch(() => {
-      // フォールバック
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      alert('✅ 埋め込みコードをコピーしました。');
-    });
-  }
+  let currentYear, currentMonth;
+  let scheduleData = {};
+  let menus = [], menuQuestionsCache = {}, commonQuestions = [], restrictions = [];
+  let selectedMenu = null, selectedDate = null, selectedTimeSlot = null;
+  let lineProfile = null;
 
   // ==========================================
   // 初期化
   // ==========================================
   async function init() {
-    const now = new Date();
-    adminYear = now.getFullYear();
-    adminMonth = now.getMonth() + 1;
-    // 不可日スロットグリッドを初期化
-    renderClosedSlotGrid();
-    // 制限モーダルのスロットグリッド初期化
-    const addRSlotGrid = document.getElementById('addRSlotGrid');
-    if (addRSlotGrid) {
-      addRSlotGrid.innerHTML = TIME_SLOTS.map(t =>
-        `<label style="display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;">
-          <input type="checkbox" name="addRSlot" value="${t}"> ${t}
-        </label>`
-      ).join('');
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      lineProfile = await liff.getProfile();
+      const now = new Date();
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth() + 1;
+      await Promise.all([loadFormDataFull(), loadSchedule()]);
+      document.getElementById('loadingScreen').style.display = 'none';
+      showScreen(1);
+    } catch (err) {
+      document.getElementById('loadingScreen').innerHTML =
+        `<p style="color:#e57373;text-align:center;padding:40px;">エラーが発生しました。<br>${err.message}</p>`;
     }
-    await Promise.all([loadReservations(), loadClosedSettings(), loadMenus(), loadCommonQuestions()]);
-    renderAdminCalendar();
-    renderStats();
+  }
+
+  function showScreen(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(`screen${n}`).classList.add('active');
+    ['sl1','sl2','sl3','sl4'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.classList.remove('active','done');
+      if (i + 1 === n) el.classList.add('active');
+      else if (i + 1 < n) el.classList.add('done');
+    });
+    window.scrollTo(0, 0);
   }
 
   // ==========================================
-  // 予約関連
+  // データ読み込み（JSONPヘルパー）
   // ==========================================
-  function loadReservations() {
+  function jsonp(url) {
     return new Promise((resolve) => {
-      const cb = 'cb_res_' + Date.now();
+      const cb = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const s = document.createElement('script');
-      window[cb] = (json) => {
-        allReservations = json.data || [];
-        renderReservations();
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb]; resolve();
-      };
-      s.src = `${GAS_URL}?action=getReservations&callback=${cb}`;
+      const timer = setTimeout(() => { resolve({}); cleanup(); }, 10000);
+      const cleanup = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; };
+      window[cb] = (json) => { clearTimeout(timer); cleanup(); resolve(json); };
+      s.src = `${url}&callback=${cb}`;
+      s.onerror = () => { clearTimeout(timer); cleanup(); resolve({}); };
       document.body.appendChild(s);
     });
   }
 
-  function renderReservations() {
-    const list = document.getElementById('reservationList');
-    const sorted = [...allReservations.filter(r => r.status === '仮押さえ'), ...allReservations.filter(r => r.status !== '仮押さえ')];
-    if (sorted.length === 0) { list.innerHTML = '<div class="empty">予約データがありません</div>'; return; }
-    list.innerHTML = sorted.map(r => {
-      const cls = r.status === '仮押さえ' ? 'pending' : r.status === '確定' ? 'confirmed' : 'rejected';
-      const menuBlock = r.menuAnswers && r.menuAnswers.length > 0
-        ? `<div class="answers-block">${r.menuAnswers.map(a => `<div class="answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`).join('')}</div>` : '';
-      const commonBlock = r.commonAnswers && r.commonAnswers.length > 0
-        ? `<div class="answers-block">${r.commonAnswers.map(a => `<div class="answer-item"><strong>${a.question}：</strong>${Array.isArray(a.answer) ? a.answer.join('、') : a.answer}</div>`).join('')}</div>` : '';
-      return `
-        <div class="res-card ${cls}">
-          <div class="res-header">
-            <div class="res-name">${r.name}</div>
-            <div class="status-badge ${cls}">${r.status}</div>
-          </div>
-          <div class="res-details">
-            <div class="res-detail"><span class="res-detail-icon">📅</span>${r.date}　${r.timeSlot}〜</div>
-            <div class="res-detail"><span class="res-detail-icon">📞</span>${r.phone || '—'}</div>
-            <div class="res-detail"><span class="res-detail-icon">🎯</span>${r.menu || '—'}　<span style="color:var(--text-light)">|</span>　👥 ${r.count || '—'}</div>
-            ${r.note ? `<div class="res-detail"><span class="res-detail-icon">📝</span>${r.note}</div>` : ''}
-          </div>
-          ${menuBlock}${commonBlock}
-          <div class="res-meta">リクエスト：${r.requestedAt}</div>
-          ${r.status === '仮押さえ' ? `<div class="res-actions"><button class="btn-confirm" onclick="updateStatus('${r.id}','確定')">確定する</button><button class="btn-reject" onclick="updateStatus('${r.id}','不可')">不可にする</button></div>` : ''}
-        </div>`;
-    }).join('');
+  async function loadFormDataFull() {
+    const json = await jsonp(`${GAS_URL}?action=getFormDataFull`);
+    if (json.status === 'success') {
+      menus = json.menus || [];
+      commonQuestions = json.commonQuestions || [];
+      restrictions = json.restrictions || [];
+    }
+    renderMenuList();
   }
 
-  async function updateStatus(reservationId, status) {
-    if (!confirm(`「${status}」にしますか？お客様にLINEで通知されます。`)) return;
-    showLoading('ステータスを更新中...');
-    try {
-      const json = await gasPost('updateReservation', { reservationId, status });
-      hideLoading();
-      if (json.status === 'success') {
-        alert(`「${status}」に更新し通知しました。`);
-        await Promise.all([loadReservations(), loadClosedSettings()]);
-        renderAdminCalendar(); renderStats();
-      } else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
+  async function loadSchedule() {
+    const month = `${currentYear}-${String(currentMonth).padStart(2,'0')}`;
+    const json = await jsonp(`${GAS_URL}?action=getSchedule&month=${month}`);
+    scheduleData = {};
+    if (json.status === 'success') json.data.forEach(d => { scheduleData[d.date] = d; });
+    if (document.getElementById('screen2').classList.contains('active')) renderCalendar();
+  }
+
+  async function loadMenuQuestions(menuId) {
+    if (menuQuestionsCache[menuId] !== undefined) return;
+    const json = await jsonp(`${GAS_URL}?action=getMenuQuestions&menuId=${menuId}`);
+    menuQuestionsCache[menuId] = json.status === 'success' ? json.data : [];
   }
 
   // ==========================================
-  // カレンダー（概要表示用）
+  // 制限チェック
   // ==========================================
-  function renderAdminCalendar() {
-    const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-    document.getElementById('adminMonthLabel').textContent = `${adminYear}年 ${monthNames[adminMonth-1]}`;
-    const grid = document.getElementById('adminCalendarGrid');
+  function isDateRestrictedForMenu(menuId, dateStr) {
+    if (!menuId) return false;
+    const dow = new Date(dateStr).getDay();
+    return restrictions.some(r => {
+      if (r.menuId !== menuId) return false;
+      if (r.type === '曜日不可' && r.dayOfWeek === dow) return true;
+      if (r.type === '曜日のみ可' && r.dayOfWeek !== dow) return true;
+      if (r.type === '日付不可' && r.date === dateStr) return true;
+      return false;
+    });
+  }
+
+  function isSlotRestrictedForMenu(menuId, dateStr, slot) {
+    if (!menuId) return false;
+    const rs = restrictions.filter(r => r.menuId === menuId && r.type === '時間枠制限');
+    if (rs.length === 0) return false;
+    const allowed = new Set();
+    rs.forEach(r => r.timeSlots.forEach(t => allowed.add(t)));
+    return !allowed.has(slot);
+  }
+
+  // ==========================================
+  // Step1: メニュー選択
+  // ==========================================
+  function renderMenuList() {
+    const list = document.getElementById('menuList');
+    if (menus.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:#aaa;padding:32px;font-size:13px;">メニューが登録されていません</div>';
+      return;
+    }
+    list.innerHTML = menus.map(m => `
+      <div class="menu-card" id="mc_${m.id}" onclick="selectMenu('${m.id}','${m.name.replace(/'/g,"\\'")}')">
+        <div class="menu-card-check">✓</div>
+        <div class="menu-card-name">${m.name}</div>
+        ${m.description ? `<div class="menu-card-desc">${m.description}</div>` : ''}
+      </div>`).join('');
+  }
+
+  function selectMenu(id, name) {
+    selectedMenu = { id, name };
+    document.querySelectorAll('.menu-card').forEach(c => c.classList.remove('selected'));
+    const card = document.getElementById(`mc_${id}`);
+    if (card) card.classList.add('selected');
+    document.getElementById('btnStep1').style.display = 'block';
+  }
+
+  async function goToStep2() {
+    if (!selectedMenu) { alert('メニューを選択してください。'); return; }
+    document.getElementById('selectedMenuBar').innerHTML =
+      `<span>🎯</span> <strong>${selectedMenu.name}</strong>`;
+    showScreen(2);
+    renderCalendar();
+  }
+
+  function goToStep1() { showScreen(1); }
+
+  // ==========================================
+  // Step2: カレンダー・時間枠
+  // ==========================================
+  function renderCalendar() {
+    const names = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    document.getElementById('monthLabel').textContent = `${currentYear}年 ${names[currentMonth-1]}`;
+    const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
     ['日','月','火','水','木','金','土'].forEach((d,i) => {
       const el = document.createElement('div');
-      el.className = `day-header${i===0?' sun':i===6?' sat':''}`;
+      el.className = `day-header ${i===0?'sun':i===6?'sat':''}`;
       el.textContent = d; grid.appendChild(el);
     });
-    const firstDay = new Date(adminYear, adminMonth-1, 1).getDay();
-    const daysInMonth = new Date(adminYear, adminMonth, 0).getDate();
+    const firstDay = new Date(currentYear, currentMonth-1, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${adminYear}-${String(adminMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const closed = allClosedSettings.find(c => c.date === dateStr);
-      const resOnDay = allReservations.filter(r => r.date === dateStr && r.status !== '不可');
-      const dow = new Date(adminYear, adminMonth-1, d).getDay();
+      const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dateObj = new Date(currentYear, currentMonth-1, d);
+      const dow = dateObj.getDay();
+      const isPast = dateObj < today;
+      const isHol = HOLIDAYS.includes(dateStr);
+      const sData = scheduleData[dateStr];
+      const menuBlocked = selectedMenu ? isDateRestrictedForMenu(selectedMenu.id, dateStr) : false;
+
       const cell = document.createElement('div');
-      cell.className = `day-cell${dow===0?' sun':dow===6?' sat':''}`;
+      let cls = 'day-cell';
+      if (dow === 0 || isHol) cls += ' sun';
+      else if (dow === 6) cls += ' sat';
+      if (isHol) cls += ' hol';
+      if (isPast) cls += ' past';
+      if (menuBlocked) cls += ' menu-closed';
+
       const numEl = document.createElement('div');
-      numEl.className = 'day-num'; numEl.textContent = d; cell.appendChild(numEl);
-      if (closed && (closed.type === 'allday' || !closed.slots || closed.slots.length === 0)) {
-        const tag = document.createElement('div');
-        tag.className = 'slot-tag closed';
-        tag.textContent = '不可'; cell.appendChild(tag);
-      } else if (resOnDay.length > 0) {
-        const tag = document.createElement('div');
-        tag.className = 'slot-tag partial';
-        tag.textContent = `${resOnDay.length}件`; cell.appendChild(tag);
+      numEl.className = 'day-num';
+      numEl.textContent = d;
+      cell.appendChild(numEl);
+
+      if (!isPast && sData) {
+        const avail = Object.values(sData.slots).filter(v => v === '空き').length;
+        const dot = document.createElement('div');
+        dot.className = 'day-dot';
+        if (menuBlocked) dot.classList.add('menu-ng');
+        else if (avail === Object.values(sData.slots).length) dot.classList.add('available');
+        else if (avail > 0) dot.classList.add('partial');
+        else dot.classList.add('full');
+        cell.appendChild(dot);
+        if (!menuBlocked && avail > 0) {
+          cls += ' clickable';
+          cell.onclick = () => openTimeSheet(dateStr, sData);
+        }
       }
+      cell.className = cls;
       grid.appendChild(cell);
     }
   }
 
-  function adminChangeMonth(delta) {
-    adminMonth += delta;
-    if (adminMonth > 12) { adminMonth = 1; adminYear++; }
-    if (adminMonth < 1) { adminMonth = 12; adminYear--; }
-    renderAdminCalendar();
+  async function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    document.getElementById('calendarGrid').innerHTML =
+      `<div style="grid-column:1/-1;text-align:center;padding:20px;"><div class="loading-spinner" style="width:24px;height:24px;border-width:2px;margin:0 auto;"></div></div>`;
+    await loadSchedule();
   }
 
-  // ==========================================
-  // メニュー関連
-  // ==========================================
-  function loadMenus() {
-    return new Promise((resolve) => {
-      const cb = 'cb_menu_' + Date.now();
-      const s = document.createElement('script');
-      window[cb] = (json) => {
-        allMenus = json.data || [];
-        const cb2 = 'cb_mq_' + Date.now();
-        const s2 = document.createElement('script');
-        window[cb2] = (json2) => {
-          allMenuQuestions = json2.data || [];
-          const cb3 = 'cb_mr_' + Date.now();
-          const s3 = document.createElement('script');
-          window[cb3] = (json3) => {
-            allRestrictions = json3.data || [];
-            renderMenuList();
-            refreshVarButtonsIfOpen();
-            if (document.body.contains(s3)) document.body.removeChild(s3);
-            delete window[cb3]; resolve();
-          };
-          s3.src = `${GAS_URL}?action=getAllMenuRestrictions&callback=${cb3}`;
-          document.body.appendChild(s3);
-          if (document.body.contains(s2)) document.body.removeChild(s2);
-          delete window[cb2];
-        };
-        s2.src = `${GAS_URL}?action=getAllMenuQuestions&callback=${cb2}`;
-        document.body.appendChild(s2);
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-      };
-      s.src = `${GAS_URL}?action=getAllMenus&callback=${cb}`;
-      document.body.appendChild(s);
+  function openTimeSheet(dateStr, sData) {
+    selectedDate = dateStr;
+    const [y,m,d] = dateStr.split('-');
+    document.getElementById('sheetTitle').textContent = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+    const grid = document.getElementById('timeGrid');
+    grid.innerHTML = '';
+    TIME_SLOTS.forEach(t => {
+      const status = sData.slots[t] || '空き';
+      const menuNG = selectedMenu ? isSlotRestrictedForMenu(selectedMenu.id, dateStr, t) : false;
+      const isDisabled = status !== '空き' || menuNG;
+      const btn = document.createElement('button');
+      let cls = 'time-btn';
+      let label = '';
+      if (status === '仮押さえ') { cls += ' pending'; label = '仮押さえ'; }
+      else if (status !== '空き') { label = '予約不可'; }
+      else if (menuNG) { cls += ' menu-ng'; label = '対象外'; }
+      btn.className = cls;
+      btn.disabled = isDisabled;
+      btn.innerHTML = `${t}<div class="time-status">${label}</div>`;
+      if (!isDisabled) btn.onclick = () => selectTimeSlot(t);
+      grid.appendChild(btn);
     });
+    document.getElementById('timeSheet').classList.add('active');
   }
 
-  function renderMenuList() {
-    const list = document.getElementById('menuList');
-    if (allMenus.length === 0) { list.innerHTML = '<div class="empty">メニューがありません</div>'; return; }
-    list.innerHTML = allMenus.map(m => {
-      const mqs = allMenuQuestions.filter(q => q.menuId === m.id);
-      const mqHtml = mqs.length > 0
-        ? mqs.map(q => `
-          <div class="question-card">
-            <div class="question-card-header">
-              <div class="question-title">${q.order}. ${q.question}</div>
-            </div>
-            <div class="question-meta">
-              <span class="badge type">${q.type}</span>
-              <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
-              <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
-              ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:var(--text-light);">${q.options.join(' / ')}</span>` : ''}
-            </div>
-            <div class="question-actions">
-              <button class="btn-small" onclick="openEditMenuQuestion('${q.id}')">編集</button>
-              <button class="btn-small danger" onclick="deleteMenuQuestion('${q.id}')">削除</button>
-            </div>
-          </div>`).join('')
-        : '<div style="font-size:12px;color:var(--text-light);padding:6px 0;">質問がありません</div>';
-      return `
-        <div class="menu-card">
-          <div class="menu-card-header">
-            <div class="menu-name">${m.name}</div>
-            <span class="badge ${m.enabled === '有効' ? 'enabled' : 'disabled'}">${m.enabled}</span>
-          </div>
-          ${m.description ? `<div class="menu-desc">${m.description}</div>` : '<div style="margin-bottom:12px;"></div>'}
-          <div class="menu-actions">
-            <button class="btn-secondary" onclick="openEditMenu('${m.id}')">編集</button>
-            <button class="btn-secondary" onclick="openAddMenuQuestion('${m.id}','${m.name}')">＋ 質問追加</button>
-            <button class="btn-danger" onclick="deleteMenu('${m.id}')">削除</button>
-          </div>
-          <div class="menu-questions-section">
-            <div class="menu-questions-title">このメニューの質問</div>
-            ${mqHtml}
-          </div>
-          <div class="menu-questions-section" style="margin-top:12px;">
-            <div class="menu-questions-title" style="display:flex;justify-content:space-between;align-items:center;">
-              <span>受付制限</span>
-              <button class="btn-small" onclick="openAddRestriction('${m.id}','${m.name}')">＋ 制限追加</button>
-            </div>
-            <div id="restrictions-${m.id}">${renderRestrictionCards(m.id)}</div>
-          </div>
-        </div>`;
+  function closeTimeSheet() {
+    document.getElementById('timeSheet').classList.remove('active');
+  }
+
+  async function selectTimeSlot(slot) {
+    selectedTimeSlot = slot;
+    closeTimeSheet();
+    await prepareStep3();
+    showScreen(3);
+  }
+
+  // ==========================================
+  // Step3: 入力フォーム
+  // ==========================================
+  async function prepareStep3() {
+    const [y,m,d] = selectedDate.split('-');
+    document.getElementById('selectedDateBar').innerHTML =
+      `<span>🎯</span> <strong>${selectedMenu.name}</strong>
+       &nbsp;|&nbsp;
+       <span>📅</span> <strong>${y}年${parseInt(m)}月${parseInt(d)}日 ${selectedTimeSlot}〜</strong>`;
+
+    if (selectedMenu.id) {
+      await loadMenuQuestions(selectedMenu.id);
+      const mqs = menuQuestionsCache[selectedMenu.id] || [];
+      if (mqs.length > 0) {
+        document.getElementById('menuQTitle').textContent = `${selectedMenu.name}について`;
+        document.getElementById('menuQuestions').innerHTML = renderQuestionFields(mqs, 'mq');
+        document.getElementById('menuQSection').style.display = 'block';
+      } else {
+        document.getElementById('menuQSection').style.display = 'none';
+      }
+    }
+
+    if (commonQuestions.length > 0) {
+      document.getElementById('commonQuestions').innerHTML = renderQuestionFields(commonQuestions, 'cq');
+      document.getElementById('commonQSection').style.display = 'block';
+    } else {
+      document.getElementById('commonQSection').style.display = 'none';
+    }
+  }
+
+  function backToStep2() {
+    showScreen(2);
+    renderCalendar();
+  }
+
+  function renderQuestionFields(questions, prefix) {
+    return questions.map((q, i) => {
+      const req = q.required === true || q.required === '必須';
+      const reqLabel = req
+        ? '<span style="color:#e57373;font-size:11px;margin-left:4px;">*必須</span>'
+        : '<span style="font-size:11px;color:#aaa;margin-left:4px;">任意</span>';
+      const label = `${q.question}${reqLabel}`;
+      if (q.type === 'テキスト')
+        return `<div class="form-group"><label>${label}</label><input type="text" id="${prefix}_${i}" placeholder="ご記入ください"></div>`;
+      if (q.type === 'プルダウン') {
+        const opts = q.options.map(o => `<option value="${o}">${o}</option>`).join('');
+        return `<div class="form-group"><label>${label}</label><select id="${prefix}_${i}"><option value="">選択してください</option>${opts}</select></div>`;
+      }
+      if (q.type === 'ラジオ') {
+        const opts = q.options.map(o => `<label class="radio-item"><input type="radio" name="${prefix}_${i}" value="${o}"> ${o}</label>`).join('');
+        return `<div class="form-group"><label>${label}</label><div class="radio-group">${opts}</div></div>`;
+      }
+      if (q.type === 'チェック') {
+        const opts = q.options.map(o => `<label class="check-item"><input type="checkbox" name="${prefix}_${i}" value="${o}"> ${o}</label>`).join('');
+        return `<div class="form-group"><label>${label}</label><div class="check-group">${opts}</div></div>`;
+      }
+      return '';
     }).join('');
   }
 
-  async function addMenu() {
-    const name = document.getElementById('menuName').value.trim();
-    const description = document.getElementById('menuDesc').value.trim();
-    if (!name) { alert('メニュー名を入力してください。'); return; }
-    showLoading('メニューを追加中...');
-    try {
-      const json = await gasPost('addMenu', { name, description });
-      hideLoading();
-      if (json.status === 'success') { document.getElementById('menuName').value = ''; document.getElementById('menuDesc').value = ''; await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  function openEditMenu(id) {
-    const m = allMenus.find(x => x.id === id); if (!m) return;
-    document.getElementById('editMenuId').value = m.id;
-    document.getElementById('editMenuName').value = m.name;
-    document.getElementById('editMenuDesc').value = m.description || '';
-    document.getElementById('editMenuEnabled').value = m.enabled;
-    document.getElementById('editMenuModal').classList.add('active');
-  }
-
-  async function saveMenu() {
-    const id = document.getElementById('editMenuId').value;
-    const name = document.getElementById('editMenuName').value.trim();
-    const description = document.getElementById('editMenuDesc').value.trim();
-    const enabled = document.getElementById('editMenuEnabled').value;
-    if (!name) { alert('メニュー名を入力してください。'); return; }
-    showLoading('保存中...');
-    try {
-      const json = await gasPost('updateMenu', { id, name, description, enabled });
-      hideLoading();
-      if (json.status === 'success') { closeModal('editMenuModal'); await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  async function deleteMenu(id) {
-    if (!confirm('このメニューを削除しますか？')) return;
-    showLoading('削除中...');
-    try {
-      const json = await gasPost('deleteMenu', { id });
-      hideLoading();
-      if (json.status === 'success') await loadMenus();
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  function openAddMenuQuestion(menuId, menuName) {
-    document.getElementById('addMQMenuId').value = menuId;
-    document.getElementById('addMQTitle').textContent = `「${menuName}」の質問を追加`;
-    document.getElementById('addMQQuestion').value = '';
-    document.getElementById('addMQOptions').value = '';
-    document.getElementById('addMQType').value = 'テキスト';
-    document.getElementById('addMQRequired').value = '任意';
-    document.getElementById('addMQOptionsWrap').style.display = 'none';
-    document.getElementById('addMenuQuestionModal').classList.add('active');
-  }
-
-  async function saveMenuQuestion() {
-    const menuId = document.getElementById('addMQMenuId').value;
-    const question = document.getElementById('addMQQuestion').value.trim();
-    const type = document.getElementById('addMQType').value;
-    const options = document.getElementById('addMQOptions').value.trim();
-    const required = document.getElementById('addMQRequired').value;
-    if (!question) { alert('質問文を入力してください。'); return; }
-    if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
-    showLoading('質問を追加中...');
-    try {
-      const json = await gasPost('addMenuQuestion', { menuId, question, type, options, required });
-      hideLoading();
-      if (json.status === 'success') { closeModal('addMenuQuestionModal'); await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  function openEditMenuQuestion(id) {
-    const q = allMenuQuestions.find(x => x.id === id); if (!q) return;
-    document.getElementById('editMQId').value = q.id;
-    document.getElementById('editMQQuestion').value = q.question;
-    document.getElementById('editMQType').value = q.type;
-    document.getElementById('editMQOptions').value = q.options ? q.options.join(',') : '';
-    document.getElementById('editMQRequired').value = q.required;
-    document.getElementById('editMQEnabled').value = q.enabled;
-    const wrap = document.getElementById('editMQOptionsWrap');
-    if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(q.type) ? 'block' : 'none';
-    document.getElementById('editMenuQuestionModal').classList.add('active');
-  }
-
-  async function saveMenuQuestionEdit() {
-    const id = document.getElementById('editMQId').value;
-    const question = document.getElementById('editMQQuestion').value.trim();
-    const type = document.getElementById('editMQType').value;
-    const options = document.getElementById('editMQOptions').value.trim();
-    const required = document.getElementById('editMQRequired').value;
-    const enabled = document.getElementById('editMQEnabled').value;
-    if (!question) { alert('質問文を入力してください。'); return; }
-    showLoading('保存中...');
-    try {
-      const json = await gasPost('updateMenuQuestion', { id, question, type, options, required, enabled });
-      hideLoading();
-      if (json.status === 'success') { closeModal('editMenuQuestionModal'); await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  async function deleteMenuQuestion(id) {
-    if (!confirm('この質問を削除しますか？')) return;
-    showLoading('削除中...');
-    try {
-      const json = await gasPost('deleteMenuQuestion', { id });
-      hideLoading();
-      if (json.status === 'success') await loadMenus();
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
+  function getAnswers(questions, prefix) {
+    return questions.map((q, i) => {
+      let answer = '';
+      if (q.type === 'テキスト' || q.type === 'プルダウン') {
+        const el = document.getElementById(`${prefix}_${i}`);
+        answer = el ? el.value : '';
+      } else if (q.type === 'ラジオ') {
+        const c = document.querySelector(`input[name="${prefix}_${i}"]:checked`);
+        answer = c ? c.value : '';
+      } else if (q.type === 'チェック') {
+        answer = Array.from(document.querySelectorAll(`input[name="${prefix}_${i}"]:checked`)).map(c => c.value);
+      }
+      return { question: q.question, answer, required: q.required === true || q.required === '必須' };
+    });
   }
 
   // ==========================================
-  // メニュー制限
+  // Step4: プレビュー
   // ==========================================
-  const DOW_NAMES = ['日曜','月曜','火曜','水曜','木曜','金曜','土曜'];
+  function goToStep4() {
+    const name = document.getElementById('inputName').value.trim();
+    const phone = document.getElementById('inputPhone').value.trim();
+    const count = document.getElementById('inputCount').value;
+    if (!name) { alert('お名前を入力してください。'); return; }
+    if (!phone) { alert('電話番号を入力してください。'); return; }
+    if (!count) { alert('撮影人数を選択してください。'); return; }
 
-  function renderRestrictionCards(menuId) {
-    const rs = allRestrictions.filter(r => r.menuId === menuId);
-    if (rs.length === 0) return '<div style="font-size:12px;color:var(--text-light);padding:6px 0;">制限なし</div>';
-    return rs.map(r => {
-      let detail = '';
-      if (r.type === '曜日不可') detail = `${DOW_NAMES[r.dayOfWeek]}は受付しない`;
-      else if (r.type === '曜日のみ可') detail = `${DOW_NAMES[r.dayOfWeek]}のみ受付`;
-      else if (r.type === '日付不可') detail = `${r.date} は受付しない`;
-      else if (r.type === '時間枠制限') detail = `受付時間枠：${r.timeSlots.join('、')}`;
-      return `<div class="restriction-card">
-        <div class="restriction-info">
-          <div class="restriction-type">${r.type}</div>
-          <div class="restriction-detail">${detail}</div>
-          ${r.note ? `<div class="restriction-note">${r.note}</div>` : ''}
+    const mqs = selectedMenu.id ? (menuQuestionsCache[selectedMenu.id] || []) : [];
+    const menuAnswers = getAnswers(mqs, 'mq');
+    const commonAnswers = getAnswers(commonQuestions, 'cq');
+    for (const a of [...menuAnswers, ...commonAnswers]) {
+      if (a.required) {
+        const empty = Array.isArray(a.answer) ? a.answer.length === 0 : !a.answer;
+        if (empty) { alert(`「${a.question}」は必須項目です。`); return; }
+      }
+    }
+
+    const [y,m,d] = selectedDate.split('-');
+    document.getElementById('pv_menu').textContent = selectedMenu.name;
+    document.getElementById('pv_date').textContent = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+    document.getElementById('pv_time').textContent = `${selectedTimeSlot}〜`;
+    document.getElementById('pv_count').textContent = count;
+    document.getElementById('pv_name').textContent = name;
+    document.getElementById('pv_phone').textContent = phone;
+
+    if (menuAnswers.length > 0) {
+      document.getElementById('pvMenuQLabel').textContent = `${selectedMenu.name}の回答`;
+      document.getElementById('pv_menuAnswers').innerHTML = menuAnswers.map(a =>
+        `<div class="preview-row">
+          <div class="preview-key">${a.question}</div>
+          <div class="preview-val">${Array.isArray(a.answer) ? (a.answer.join('、') || '—') : (a.answer || '—')}</div>
+        </div>`).join('');
+      document.getElementById('pvMenuQCard').style.display = 'block';
+    } else {
+      document.getElementById('pvMenuQCard').style.display = 'none';
+    }
+
+    if (commonAnswers.length > 0) {
+      document.getElementById('pv_commonAnswers').innerHTML = commonAnswers.map(a =>
+        `<div class="preview-row">
+          <div class="preview-key">${a.question}</div>
+          <div class="preview-val">${Array.isArray(a.answer) ? (a.answer.join('、') || '—') : (a.answer || '—')}</div>
+        </div>`).join('');
+      document.getElementById('pvCommonQCard').style.display = 'block';
+    } else {
+      document.getElementById('pvCommonQCard').style.display = 'none';
+    }
+
+    const note = document.getElementById('inputNote').value.trim();
+    if (note) {
+      document.getElementById('pv_note').textContent = note;
+      document.getElementById('pvNoteCard').style.display = 'block';
+    } else {
+      document.getElementById('pvNoteCard').style.display = 'none';
+    }
+
+    showScreen(4);
+  }
+
+  // ==========================================
+  // 送信
+  // ==========================================
+  async function submitReservation() {
+    const name = document.getElementById('inputName').value.trim();
+    const phone = document.getElementById('inputPhone').value.trim();
+    const count = document.getElementById('inputCount').value;
+    const note = document.getElementById('inputNote').value.trim();
+    const mqs = selectedMenu.id ? (menuQuestionsCache[selectedMenu.id] || []) : [];
+    const menuAnswers = getAnswers(mqs, 'mq');
+    const commonAnswers = getAnswers(commonQuestions, 'cq');
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
+    try {
+      const params = {
+        lineUserId: lineProfile.userId,
+        name, date: selectedDate, timeSlot: selectedTimeSlot,
+        menu: selectedMenu.name, count, note, phone,
+        menuAnswers, commonAnswers,
+      };
+      const encoded = encodeURIComponent(JSON.stringify(params));
+      const cbName = 'cb_submit_' + Date.now();
+      const json = await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        const timer = setTimeout(() => {
+          if (document.body.contains(s)) document.body.removeChild(s);
+          delete window[cbName];
+          reject(new Error('タイムアウト'));
+        }, 15000);
+        window[cbName] = (data) => {
+          clearTimeout(timer);
+          if (document.body.contains(s)) document.body.removeChild(s);
+          delete window[cbName];
+          resolve(data);
+        };
+        s.src = GAS_URL + '?action=createReservation&params=' + encoded + '&callback=' + cbName;
+        s.onerror = () => { clearTimeout(timer); reject(new Error('通信エラー')); };
+        document.body.appendChild(s);
+      });
+      if (json.status === 'success') {
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('stepBar').style.display = 'none';
+        document.getElementById('completeScreen').classList.add('active');
+      } else {
+        btn.disabled = false;
+        btn.textContent = '予約リクエストを送信';
+        alert('エラーが発生しました。もう一度お試しください。');
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '予約リクエストを送信';
+      alert('通信エラーが発生しました。もう一度お試しください。');
+    }
+  }
+
+
+  // ==========================================
+  // 会員証・ポイント・クーポン・友達紹介
+  // ==========================================
+  let memberData = null;
+  let memberCoupons = [];
+
+  async function openMemberPage() {
+    document.getElementById('memberPage').style.display = 'block';
+    loadMemberCard();
+  }
+
+  function closeMemberPage() {
+    document.getElementById('memberPage').style.display = 'none';
+  }
+
+  function getCountdownInfo(remainDays) {
+    if (remainDays === null) return { color:'#aaa', bg:'#f5f5f5', urgent:false };
+    if (remainDays <= 0)  return { color:'#bbb', bg:'#f5f5f5', urgent:false, expired:true };
+    if (remainDays <= 7)  return { color:'#e53935', bg:'#fff5f5', urgent:true };
+    if (remainDays <= 30) return { color:'#f57c00', bg:'#fff8f0', urgent:false };
+    return { color:'#43a047', bg:'#f0faf1', urgent:false };
+  }
+
+  function switchMemberTab(tab, el) {
+    document.querySelectorAll('.member-tab').forEach(b => {
+      b.style.color = '#bbb'; b.style.borderBottom = 'none'; b.style.fontWeight = '400';
+    });
+    el.style.color = '#68c0d3'; el.style.borderBottom = '2px solid #68c0d3'; el.style.fontWeight = '600';
+    document.querySelectorAll('.member-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('memberTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    if (tab === 'coupon') loadMemberCoupons();
+    if (tab === 'referral') loadReferralCode();
+    if (tab === 'bookings') loadMyBookings();
+    if (tab === 'photos') loadMyPhotos();
+  }
+
+  // ==========================================
+  // 撮影予約タブ
+  // ==========================================
+  function loadMyBookings() {
+    if (!lineProfile) return;
+    const list = document.getElementById('bookingList');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>';
+    const cb = 'cb_bookings_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      renderMyBookings(json.data || []);
+    };
+    s.src = GAS_URL + '?action=getMyBookings&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderMyBookings(bookings) {
+    const list = document.getElementById('bookingList');
+    if (!list) return;
+    if (bookings.length === 0) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:40px;">
+          <div style="font-size:36px;margin-bottom:12px;">📋</div>
+          <div style="font-size:13px;color:#bbb;line-height:1.8;">予約はまだありません。</div>
+        </div>`;
+      return;
+    }
+
+    const STATUS_STYLE = {
+      '仮押さえ': { bg:'#fff8e1', color:'#f9a825', label:'仮押さえ' },
+      '確定':     { bg:'#e8f5e9', color:'#43a047', label:'確定' },
+      '不可':     { bg:'#fce4ec', color:'#e53935', label:'不可' },
+    };
+    const PROGRESS_STYLE = {
+      '予約受付': { bg:'#f0f4ff', color:'#5070b0' },
+      '撮影待ち': { bg:'#fff8e1', color:'#f9a825' },
+      '撮影済み': { bg:'#e8f5ff', color:'#2196f3' },
+      '編集中':   { bg:'#fce4f8', color:'#9c27b0' },
+      '納品完了': { bg:'#e8f5e9', color:'#43a047' },
+    };
+    const DOC_ICONS = { schedule:'🕐', estimate:'💴', checklist:'✅', notes:'📝' };
+
+    list.innerHTML = bookings.map((b, idx) => {
+      const st = STATUS_STYLE[b.status] || { bg:'#f5f5f5', color:'#aaa', label: b.status };
+      const pg = PROGRESS_STYLE[b.progress] || { bg:'#f5f5f5', color:'#aaa' };
+      const isOpen = idx === 0; // 最新1件だけ最初から展開
+
+      // 撮影資料
+      let docsSection = '';
+      if (b.docs && b.docs.length > 0) {
+        docsSection = `
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px;">
+            <div style="font-size:11px;font-weight:600;color:#68c0d3;margin-bottom:8px;">🗂 撮影資料</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${b.docs.map(d => `
+                <div>
+                  <div style="font-size:11px;color:#888;margin-bottom:5px;">${DOC_ICONS[d.docType] || '📄'} ${d.docLabel}</div>
+                  <img src="${d.imageBase64}" alt="${d.docLabel}"
+                    style="width:100%;border-radius:10px;border:1px solid #eee;display:block;cursor:pointer;"
+                    onclick="openDocViewer(this.src,'${d.docLabel}')">
+                  <div style="font-size:10px;color:#ccc;text-align:right;margin-top:3px;">更新：${d.uploadedAt}</div>
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      return `
+      <div style="background:#fff;border:1.5px solid #eee;border-radius:14px;margin-bottom:12px;overflow:hidden;">
+        <!-- ヘッダー（タップで展開） -->
+        <div onclick="toggleBooking('booking_${b.id}')"
+          style="display:flex;justify-content:space-between;align-items:center;padding:14px;cursor:pointer;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              📅 ${b.date}　${b.timeSlot}〜
+            </div>
+            <div style="font-size:11px;color:#aaa;margin-top:2px;">${b.menu || ''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <span style="font-size:10px;background:${st.bg};color:${st.color};padding:3px 8px;border-radius:12px;font-weight:600;">${st.label}</span>
+            ${b.progress && b.status === '確定' ? `<span style="font-size:10px;background:${pg.bg};color:${pg.color};padding:3px 8px;border-radius:12px;font-weight:600;">${b.progress}</span>` : ''}
+            <span id="arrow_booking_${b.id}" style="color:#ccc;font-size:14px;transition:transform 0.2s;">${isOpen ? '▲' : '▼'}</span>
+          </div>
         </div>
-        <button class="btn-small danger" onclick="deleteRestriction('${r.id}','${menuId}')">削除</button>
+        <!-- 展開エリア -->
+        <div id="booking_${b.id}" style="display:${isOpen ? 'block' : 'none'};padding:0 14px 14px;border-top:1px solid #f5f5f5;">
+          <div style="font-size:11px;color:#aaa;padding:10px 0 8px;line-height:1.8;">
+            <span>👤 ${b.count ? b.count + '名' : '—'}</span>　
+            <span>📌 ${b.menu || '—'}</span>
+          </div>
+          ${docsSection}
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px;">
+            <div style="font-size:11px;font-weight:600;color:#68c0d3;margin-bottom:8px;">🗂 撮影資料</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              ${['🕐 タイムスケジュール','💴 お見積もり','✅ 持ち物リスト','📝 注意事項・当日の流れ'].map(lbl => \`
+              <div>
+                <div style="font-size:11px;color:#888;margin-bottom:4px;">\${lbl}</div>
+                <div style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border:1.5px dashed #b8e3ec;border-radius:10px;padding:18px;text-align:center;">
+                  <div style="font-size:12px;color:#8cc8d8;font-weight:600;">確定後に表示されます</div>
+                </div>
+              </div>\`).join('')}
+            </div>
+          </div>
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:12px;">
+            <div style="font-size:11px;font-weight:600;color:#68c0d3;margin-bottom:8px;">📁 フォトデータ</div>
+            <div style="background:linear-gradient(135deg,#f0fafb,#e6f4f7);border:1.5px dashed #b8e3ec;border-radius:10px;padding:24px;text-align:center;">
+              <div style="font-size:20px;margin-bottom:6px;">📁</div>
+              <div style="font-size:12px;color:#8cc8d8;font-weight:600;">データ納品後に表示されます</div>
+            </div>
+          </div>` : ''}
+        </div>
       </div>`;
     }).join('');
   }
 
-  function toggleRestrictionFields() {
-    const type = document.getElementById('addRType').value;
-    document.getElementById('addRDowWrap').style.display = ['曜日不可','曜日のみ可'].includes(type) ? 'block' : 'none';
-    document.getElementById('addRDateWrap').style.display = type === '日付不可' ? 'block' : 'none';
-    document.getElementById('addRSlotsWrap').style.display = type === '時間枠制限' ? 'block' : 'none';
-  }
-
-  function openAddRestriction(menuId, menuName) {
-    document.getElementById('addRMenuId').value = menuId;
-    document.getElementById('addRTitle').textContent = `「${menuName}」の受付制限を追加`;
-    document.getElementById('addRType').value = '曜日不可';
-    document.getElementById('addRDow').value = '0';
-    document.getElementById('addRDate').value = '';
-    document.getElementById('addRNote').value = '';
-    document.querySelectorAll('input[name="addRSlot"]').forEach(c => c.checked = false);
-    toggleRestrictionFields();
-    document.getElementById('addRestrictionModal').classList.add('active');
-  }
-
-  async function saveRestriction() {
-    const menuId = document.getElementById('addRMenuId').value;
-    const type = document.getElementById('addRType').value;
-    const note = document.getElementById('addRNote').value.trim();
-    let params = { action: 'addMenuRestriction', menuId, type, note };
-    if (['曜日不可','曜日のみ可'].includes(type)) {
-      params.dayOfWeek = document.getElementById('addRDow').value;
-    } else if (type === '日付不可') {
-      const date = document.getElementById('addRDate').value;
-      if (!date) { alert('日付を選択してください。'); return; }
-      params.date = date;
-    } else if (type === '時間枠制限') {
-      const slots = Array.from(document.querySelectorAll('input[name="addRSlot"]:checked')).map(c => c.value);
-      if (slots.length === 0) { alert('時間枠を1つ以上選択してください。'); return; }
-      params.timeSlots = slots;
-    }
-    showLoading('制限を追加中...');
-    try {
-      const json = await gasPost(params.action, params);
-      hideLoading();
-      if (json.status === 'success') { closeModal('addRestrictionModal'); await loadMenus(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  async function deleteRestriction(id, menuId) {
-    if (!confirm('この制限を削除しますか？')) return;
-    showLoading('削除中...');
-    try {
-      const json = await gasPost('deleteMenuRestriction', { id });
-      hideLoading();
-      if (json.status === 'success') await loadMenus();
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
+  function toggleBooking(id) {
+    const el = document.getElementById(id);
+    const arrow = document.getElementById('arrow_' + id);
+    if (!el) return;
+    const isOpen = el.style.display !== 'none';
+    el.style.display = isOpen ? 'none' : 'block';
+    if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
   }
 
   // ==========================================
-  // 共通質問
+  // フォトデータタブ
   // ==========================================
-  function loadCommonQuestions() {
-    return new Promise((resolve) => {
-      const cb = 'cb_cq_' + Date.now();
-      const s = document.createElement('script');
-      window[cb] = (json) => {
-        allCommonQuestions = json.data || [];
-        renderCommonQuestions();
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb]; resolve();
-      };
-      s.src = `${GAS_URL}?action=getAllFormQuestions&callback=${cb}`;
-      document.body.appendChild(s);
-    });
-  }
-
-  function renderCommonQuestions() {
-    refreshVarButtonsIfOpen();
-    const list = document.getElementById('questionList');
-    if (allCommonQuestions.length === 0) { list.innerHTML = '<div class="empty">共通質問がありません</div>'; return; }
-    list.innerHTML = allCommonQuestions.map(q => `
-      <div class="card">
-        <div class="question-card-header">
-          <div class="question-title">${q.order}. ${q.question}</div>
-        </div>
-        <div class="question-meta">
-          <span class="badge type">${q.type}</span>
-          <span class="badge ${q.required === '必須' ? 'required' : 'optional'}">${q.required}</span>
-          <span class="badge ${q.enabled === '有効' ? 'enabled' : 'disabled'}">${q.enabled}</span>
-          ${q.options && q.options.length > 0 ? `<span style="font-size:10px;color:var(--text-light);">${q.options.join(' / ')}</span>` : ''}
-        </div>
-        <div class="question-actions">
-          <button class="btn-secondary" onclick="openEditCommonQuestion('${q.id}')">編集</button>
-          <button class="btn-danger" onclick="deleteCommonQuestion('${q.id}')">削除</button>
-        </div>
-      </div>`).join('');
-  }
-
-  async function addCommonQuestion() {
-    const question = document.getElementById('qQuestion').value.trim();
-    const type = document.getElementById('qType').value;
-    const options = document.getElementById('qOptions').value.trim();
-    const required = document.getElementById('qRequired').value;
-    if (!question) { alert('質問文を入力してください。'); return; }
-    if (['プルダウン','ラジオ','チェック'].includes(type) && !options) { alert('選択肢を入力してください。'); return; }
-    showLoading('質問を追加中...');
-    try {
-      const json = await gasPost('addFormQuestion', { question, type, options, required });
-      hideLoading();
-      if (json.status === 'success') { document.getElementById('qQuestion').value = ''; document.getElementById('qOptions').value = ''; await loadCommonQuestions(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  function openEditCommonQuestion(id) {
-    const q = allCommonQuestions.find(x => x.id === id); if (!q) return;
-    document.getElementById('editQId').value = q.id;
-    document.getElementById('editQQuestion').value = q.question;
-    document.getElementById('editQType').value = q.type;
-    document.getElementById('editQOptions').value = q.options ? q.options.join(',') : '';
-    document.getElementById('editQRequired').value = q.required;
-    document.getElementById('editQEnabled').value = q.enabled;
-    const wrap = document.getElementById('editQOptionsWrap');
-    if (wrap) wrap.style.display = ['プルダウン','ラジオ','チェック'].includes(q.type) ? 'block' : 'none';
-    document.getElementById('editQuestionModal').classList.add('active');
-  }
-
-  async function saveCommonQuestion() {
-    const id = document.getElementById('editQId').value;
-    const question = document.getElementById('editQQuestion').value.trim();
-    const type = document.getElementById('editQType').value;
-    const options = document.getElementById('editQOptions').value.trim();
-    const required = document.getElementById('editQRequired').value;
-    const enabled = document.getElementById('editQEnabled').value;
-    if (!question) { alert('質問文を入力してください。'); return; }
-    showLoading('保存中...');
-    try {
-      const json = await gasPost('updateFormQuestion', { id, question, type, options, required, enabled });
-      hideLoading();
-      if (json.status === 'success') { closeModal('editQuestionModal'); await loadCommonQuestions(); }
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  async function deleteCommonQuestion(id) {
-    if (!confirm('この共通質問を削除しますか？')) return;
-    showLoading('削除中...');
-    try {
-      const json = await gasPost('deleteFormQuestion', { id });
-      hideLoading();
-      if (json.status === 'success') await loadCommonQuestions();
-      else alert('エラーが発生しました。');
-    } catch (e) { hideLoading(); alert('通信エラーが発生しました。'); }
-  }
-
-  // ==========================================
-  // 分析
-  // ==========================================
-  function renderStats() {
-    const total = allReservations.length;
-    const confirmed = allReservations.filter(r => r.status === '確定').length;
-    const pending = allReservations.filter(r => r.status === '仮押さえ').length;
-    const rejected = allReservations.filter(r => r.status === '不可').length;
-    document.getElementById('statsGrid').innerHTML = `
-      <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">総リクエスト数</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:var(--primary-dark);">${confirmed}</div><div class="stat-label">確定数</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:var(--primary);">${pending}</div><div class="stat-label">仮押さえ中</div></div>
-      <div class="stat-card"><div class="stat-number" style="color:#d05a5a;">${rejected}</div><div class="stat-label">不可数</div></div>`;
-    const timeCounts = {};
-    TIME_SLOTS.forEach(t => { timeCounts[t] = 0; });
-    allReservations.filter(r => r.status === '確定').forEach(r => { if (timeCounts[r.timeSlot] !== undefined) timeCounts[r.timeSlot]++; });
-    const max = Math.max(...Object.values(timeCounts), 1);
-    document.getElementById('timeChart').innerHTML = TIME_SLOTS.map(t => `
-      <div class="bar-row">
-        <div class="bar-label">${t}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${(timeCounts[t]/max)*100}%"></div></div>
-        <div class="bar-value">${timeCounts[t]}</div>
-      </div>`).join('');
-    document.getElementById('chartContainer').style.display = 'block';
-  }
-
-  // ==========================================
-  // GAS JSONP通信
-  // ==========================================
-  function gasPost(action, params) {
-    return new Promise((resolve) => {
-      const cb = 'cb_post_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      const s = document.createElement('script');
-      const timer = setTimeout(() => {
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-        resolve({ status: 'error', message: 'タイムアウト' });
-      }, 15000);
-      window[cb] = (json) => {
-        clearTimeout(timer);
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-        resolve(json);
-      };
-      params.action = action;
-      const encoded = encodeURIComponent(JSON.stringify(params));
-      s.src = `${GAS_URL}?action=${action}&params=${encoded}&callback=${cb}`;
-      s.onerror = () => {
-        clearTimeout(timer);
-        if (document.body.contains(s)) document.body.removeChild(s);
-        delete window[cb];
-        resolve({ status: 'error', message: '通信エラー' });
-      };
-      document.body.appendChild(s);
-    });
-  }
-
-
-  // ==========================================
-  // 進捗管理
-  // ==========================================
-  let progressFilter = 'all';
-  const PROGRESS_STEPS = ['予約受付','撮影待ち','撮影済み','編集中','納品完了'];
-
-  function loadProgress() {
-    if (allReservations.length === 0) {
-      loadReservations().then(() => renderProgress());
-    } else {
-      renderProgress();
-    }
-  }
-
-  function filterProgress(filter, el) {
-    progressFilter = filter;
-    document.querySelectorAll('.prog-filter-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    renderProgress();
-  }
-
-  function renderProgress() {
-    const list = document.getElementById('progressList');
+  function loadMyPhotos() {
+    if (!lineProfile) return;
+    const list = document.getElementById('photoDataList');
     if (!list) return;
-    const confirmed = allReservations.filter(r => r.status === '確定');
-    const filtered = progressFilter === 'all' ? confirmed : confirmed.filter(r => (r.progress || '撮影待ち') === progressFilter);
-    if (filtered.length === 0) {
-      list.innerHTML = '<div class="empty">該当する予約がありません</div>';
-      return;
-    }
-    // 日付降順ソート
-    filtered.sort((a, b) => b.date.localeCompare(a.date));
-    list.innerHTML = filtered.map(r => {
-      const prog = r.progress || '撮影待ち';
-      return `
-        <div class="card" style="border-left:3px solid var(--primary);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-            <div>
-              <div style="font-size:15px;font-weight:500;color:var(--text-dark);">${r.name}</div>
-              <div style="font-size:12px;color:var(--text-light);margin-top:2px;">📅 ${r.date} ${r.timeSlot}〜　🎯 ${r.menu || '—'}</div>
-            </div>
-            <span class="prog-badge ${prog}">${prog}</span>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${PROGRESS_STEPS.map(step =>
-              `<button class="btn-small${prog === step ? ' active' : ''}"
-                style="${prog === step ? 'border-color:var(--primary);color:var(--primary-dark);font-weight:600;' : ''}"
-                onclick="setProgress('${r.id}','${step}',this)">${step}</button>`
-            ).join('')}
-          </div>
-        </div>`;
-    }).join('');
-  }
-
-  async function setProgress(reservationId, progress, btnEl) {
-    try {
-      const json = await gasPost('updateProgress', { reservationId, progress });
-      if (json.status === 'success') {
-        const r = allReservations.find(x => x.id === reservationId);
-        if (r) r.progress = progress;
-        renderProgress();
-        if (progress === '納品完了') showToast('納品完了通知を送信しました 📷');
-      } else {
-        alert('エラー: ' + (json.message || '不明'));
-      }
-    } catch(e) { alert('通信エラー'); }
-  }
-
-  // ==========================================
-  // 会員管理
-  // ==========================================
-  let allMembers = [];
-
-  function loadMembers() {
-    const list = document.getElementById('memberList');
-    if (!list) return;
-    list.innerHTML = '<div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div>';
-    const cb = 'cb_members_' + Date.now();
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">読み込み中...</div>';
+    const cb = 'cb_photos_' + Date.now();
     const s = document.createElement('script');
     window[cb] = (json) => {
       if (document.body.contains(s)) document.body.removeChild(s);
       delete window[cb];
-      allMembers = json.data || [];
-      renderMembers();
+      renderMyPhotos(json.data || []);
     };
-    s.src = GAS_URL + '?action=getAllMembers&callback=' + cb;
-    s.onerror = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; };
+    s.src = GAS_URL + '?action=getMyPhotos&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
     document.body.appendChild(s);
   }
 
-  function renderMembers() {
-    const list = document.getElementById('memberList');
+  function renderMyPhotos(photos) {
+    const list = document.getElementById('photoDataList');
     if (!list) return;
-    if (allMembers.length === 0) {
-      list.innerHTML = '<div class="empty">会員データがありません<br><span style="font-size:11px;">予約確定時に自動登録されます</span></div>';
+    if (photos.length === 0) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:40px;">
+          <div style="font-size:36px;margin-bottom:12px;">📷</div>
+          <div style="font-size:13px;color:#bbb;line-height:1.8;">まだフォトデータはありません。<br>撮影後にここに表示されます。</div>
+        </div>`;
       return;
     }
-    const rankOrder = { 'プラチナ': 4, 'ゴールド': 3, 'シルバー': 2, 'ノーマル': 1 };
-    const sorted = [...allMembers].sort((a, b) => (rankOrder[b.rank] || 0) - (rankOrder[a.rank] || 0));
-
-    // 集計
-    const total = sorted.length;
-    const platinum = sorted.filter(m => m.rank === 'プラチナ').length;
-    const gold = sorted.filter(m => m.rank === 'ゴールド').length;
-    const silver = sorted.filter(m => m.rank === 'シルバー').length;
-
-    list.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
-        <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">総会員数</div></div>
-        <div class="stat-card"><div class="stat-number" style="color:#30a070;">${platinum}</div><div class="stat-label">プラチナ</div></div>
-        <div class="stat-card"><div class="stat-number" style="color:#b08020;">${gold}</div><div class="stat-label">ゴールド</div></div>
-        <div class="stat-card"><div class="stat-number" style="color:#6080a0;">${silver}</div><div class="stat-label">シルバー</div></div>
-      </div>
-      ${sorted.map(m => `
-        <div class="member-card">
-          <div class="member-avatar">👤</div>
-          <div class="member-info">
-            <div class="member-name">${m.name} <span class="rank-badge ${m.rank}">${m.rank}</span></div>
-            <div class="member-meta">
-              🎯 撮影 ${m.visitCount}回　⭐ ${m.point}pt<br>
-              📅 登録：${m.registeredAt}
-              ${m.birthday ? '　🎂 ' + m.birthday : ''}
-            </div>
+    list.innerHTML = photos.map(p => {
+      const cd = getCountdownInfo(p.remainDays);
+      const expired = cd.expired || false;
+      const barPct = expired ? 0 : Math.min(100, Math.round((p.remainDays / 60) * 100));
+      return `
+      <div style="background:#fff;border:1.5px solid ${expired ? '#eee' : cd.color + '44'};border-radius:14px;padding:14px;margin-bottom:12px;${cd.urgent ? 'box-shadow:0 0 0 2px ' + cd.color + '33;' : ''}">
+        <div style="margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:600;color:#444;">📅 ${p.date}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:2px;">${p.menu || ''}</div>
+        </div>
+        <div style="background:${expired ? '#f5f5f5' : cd.bg};border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:11px;color:${expired ? '#bbb' : cd.color};font-weight:600;">
+              ${expired ? '⛔ ダウンロード期限切れ' : 'ダウンロード期限'}
+            </span>
+            <span style="font-size:11px;color:#aaa;">${p.expireDate || ''} まで</span>
           </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <button class="btn-small" onclick="openIssueCouponForMember('${m.lineUserId}','${m.name}')">クーポン発行</button>
+          <div style="background:${expired ? '#e0e0e0' : cd.color + '33'};border-radius:6px;height:7px;overflow:hidden;margin-bottom:8px;">
+            <div style="height:100%;border-radius:6px;background:${cd.color};width:${barPct}%;"></div>
+          </div>
+          ${!expired ? `
+          <div style="text-align:center;">
+            <span style="font-size:18px;font-weight:700;color:${cd.color};">残り</span>
+            <span style="font-size:28px;font-weight:800;color:${cd.color};margin:0 2px;">${p.remainDays}</span>
+            <span style="font-size:18px;font-weight:700;color:${cd.color};">日</span>
+          </div>
+          ${cd.urgent ? `<div style="font-size:11px;color:${cd.color};font-weight:600;margin-top:5px;text-align:center;">⚠️ お早めにダウンロードしてください</div>` : ''}
+          ` : ''}
+        </div>
+        ${expired
+          ? `<div style="padding:12px;background:#f5f5f5;color:#bbb;border-radius:10px;font-size:13px;font-weight:600;text-align:center;">受け取り期限が終了しました</div>`
+          : `<a href="${p.driveUrl}" target="_blank"
+              style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#68c0d3,#4a9db0);color:#fff;border-radius:10px;font-size:13px;font-weight:600;text-align:center;text-decoration:none;">
+              📁 フォトデータを受け取る
+            </a>
+            <div style="font-size:10px;color:#bbb;text-align:center;margin-top:6px;">タップするとGoogleドライブが開きます</div>
+            <button onclick="openOrderModal('${p.reservationId}','${p.date}','${p.menu||''}')"
+              style="width:100%;margin-top:8px;padding:12px;background:#fff;border:2px solid #68c0d3;border-radius:10px;font-size:13px;font-weight:600;color:#4a9db0;cursor:pointer;">
+              🛍 フォトアイテムを注文する
+            </button>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  // ==========================================
+  // 注文フロー
+  // ==========================================
+  let orderState = {
+    reservationId: '', date: '', menu: '',
+    selectedPhotos: [],   // [{no, url}]
+    selectedItems: [],    // [{itemId, name, size, price, squareUrl, qty}]
+    delivery: '店頭受け取り',
+    shopItems: [],
+    memberRank: 'REGULAR',
+    discountRate: 0,
+  };
+
+  function openOrderModal(reservationId, date, menu) {
+    orderState.reservationId = reservationId;
+    orderState.date = date;
+    orderState.menu = menu;
+    orderState.selectedPhotos = [];
+    orderState.selectedItems = [];
+    orderState.delivery = '店頭受け取り';
+
+    document.getElementById('orderModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+
+    // STEP1表示
+    showOrderStep(1);
+
+    // サムネとショップ商品を並行取得
+    loadOrderThumbs(reservationId);
+    loadShopItemsForOrder();
+  }
+
+  function closeOrderModal() {
+    document.getElementById('orderModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function showOrderStep(step) {
+    [1,2,3].forEach(n => {
+      const el = document.getElementById('orderStep' + n);
+      if (el) el.style.display = n === step ? 'block' : 'none';
+    });
+  }
+
+  function loadOrderThumbs(reservationId) {
+    const grid = document.getElementById('thumbGrid');
+    const noMsg = document.getElementById('noThumbMsg');
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#bbb;font-size:12px;">読み込み中...</div>';
+    const cb = 'cb_thumbs_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      const thumbs = (json.data && json.data.thumbs) || [];
+      if (thumbs.length === 0) {
+        if (grid) grid.innerHTML = '';
+        if (noMsg) noMsg.style.display = 'block';
+      } else {
+        if (noMsg) noMsg.style.display = 'none';
+        renderThumbGrid(thumbs);
+      }
+    };
+    s.src = GAS_URL + '?action=getPhotoThumbs&reservationId=' + encodeURIComponent(reservationId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderThumbGrid(thumbs) {
+    const grid = document.getElementById('thumbGrid');
+    if (!grid) return;
+    grid.innerHTML = thumbs.map(t => `
+      <div id="thumb_${t.no}" onclick="toggleThumbSelect(${t.no},'${t.url}')"
+        style="position:relative;border-radius:10px;overflow:hidden;border:3px solid transparent;cursor:pointer;aspect-ratio:1;background:#f0f0f0;">
+        <img src="${convertDriveUrl(t.url)}" alt="No.${t.no}"
+          style="width:100%;height:100%;object-fit:cover;"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:#f0fafb;font-size:11px;color:#aaa;">No.${t.no}</div>
+        <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;padding:2px 5px;border-radius:6px;">No.${t.no}</div>
+        <div id="thumbCheck_${t.no}" style="display:none;position:absolute;inset:0;background:rgba(104,192,211,0.4);align-items:center;justify-content:center;">
+          <div style="background:#68c0d3;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;">✓</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function convertDriveUrl(url) {
+    // GoogleDriveの共有URLを直接表示用URLに変換
+    const m = url.match(/\/file\/d\/([^/]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w300';
+    return url;
+  }
+
+  function toggleThumbSelect(no, url) {
+    const idx = orderState.selectedPhotos.findIndex(p => p.no === no);
+    const checkEl = document.getElementById('thumbCheck_' + no);
+    const thumbEl = document.getElementById('thumb_' + no);
+    if (idx >= 0) {
+      orderState.selectedPhotos.splice(idx, 1);
+      if (checkEl) checkEl.style.display = 'none';
+      if (thumbEl) thumbEl.style.borderColor = 'transparent';
+    } else {
+      orderState.selectedPhotos.push({ no, url });
+      if (checkEl) checkEl.style.display = 'flex';
+      if (thumbEl) thumbEl.style.borderColor = '#68c0d3';
+    }
+  }
+
+  function goOrderStep2() {
+    if (orderState.selectedPhotos.length === 0) {
+      alert('写真を1枚以上選択してください');
+      return;
+    }
+    const nums = orderState.selectedPhotos.map(p => 'No.' + p.no).join('・');
+    document.getElementById('selectedPhotoNums').textContent = nums;
+    showOrderStep(2);
+    if (orderState.shopItems.length > 0) renderShopItemGrid();
+  }
+
+  function backOrderStep1() { showOrderStep(1); }
+
+  function loadShopItemsForOrder() {
+    if (orderState.shopItems.length > 0) return;
+    const cb = 'cb_shopord_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      orderState.shopItems = json.data || [];
+    };
+    s.src = GAS_URL + '?action=getShopItems&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  const CAT_ICONS = { print:'🖼', album:'📔', canvas:'🎨', acrylic:'💎', other:'📦' };
+
+  function renderShopItemGrid() {
+    const grid = document.getElementById('shopItemGrid');
+    if (!grid) return;
+    if (orderState.shopItems.length === 0) {
+      grid.innerHTML = '<div style="text-align:center;color:#bbb;padding:30px;font-size:13px;">商品が登録されていません</div>';
+      return;
+    }
+    grid.innerHTML = orderState.shopItems.map(item => `
+      <div style="background:#fff;border-radius:12px;padding:14px;">
+        <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
+          ${CAT_ICONS[item.category] || '📦'} ${item.name}
+        </div>
+        ${item.description ? `<div style="font-size:11px;color:#aaa;margin-bottom:10px;">${item.description}</div>` : ''}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${(item.sizes || []).map(sz => {
+            const key = item.id + '_' + sz.label;
+            return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8f9fa;border-radius:8px;">
+              <div>
+                <span style="font-size:12px;font-weight:600;color:#444;">${sz.label}</span>
+                <span style="font-size:12px;color:#68c0d3;font-weight:700;margin-left:8px;">¥${Number(sz.price).toLocaleString()}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button onclick="changeQty('${key}','${item.id}','${item.name}','${sz.label}',${sz.price},'${sz.squareUrl||''}', -1)"
+                  style="width:28px;height:28px;border-radius:50%;border:1.5px solid #ddd;background:#fff;font-size:16px;cursor:pointer;color:#666;">−</button>
+                <span id="qty_${key}" style="font-size:14px;font-weight:600;color:#333;min-width:20px;text-align:center;">0</span>
+                <button onclick="changeQty('${key}','${item.id}','${item.name}','${sz.label}',${sz.price},'${sz.squareUrl||''}', 1)"
+                  style="width:28px;height:28px;border-radius:50%;border:1.5px solid #68c0d3;background:#f0fafb;font-size:16px;cursor:pointer;color:#4a9db0;">＋</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  function changeQty(key, itemId, name, size, price, squareUrl, delta) {
+    const qtyEl = document.getElementById('qty_' + key);
+    const cur = orderState.selectedItems.findIndex(x => x.key === key);
+    if (cur >= 0) {
+      orderState.selectedItems[cur].qty = Math.max(0, orderState.selectedItems[cur].qty + delta);
+      if (orderState.selectedItems[cur].qty === 0) orderState.selectedItems.splice(cur, 1);
+    } else if (delta > 0) {
+      orderState.selectedItems.push({ key, itemId, name, size, price: Number(price), squareUrl, qty: 1 });
+    }
+    const item = orderState.selectedItems.find(x => x.key === key);
+    if (qtyEl) qtyEl.textContent = item ? item.qty : 0;
+  }
+
+  function goOrderStep3() {
+    if (orderState.selectedItems.length === 0) {
+      alert('商品を1つ以上選択してください');
+      return;
+    }
+    renderOrderSummary();
+    showOrderStep(3);
+    selectDelivery('店頭受け取り');
+  }
+
+  function backOrderStep2() { showOrderStep(2); }
+
+  function renderOrderSummary() {
+    const summaryEl = document.getElementById('orderSummary');
+    const totalEl = document.getElementById('orderTotal');
+    const totalOrigEl = document.getElementById('orderTotalOrig');
+    const photoNums = orderState.selectedPhotos.map(p => 'No.' + p.no).join('・');
+    let total = 0;
+    const lines = orderState.selectedItems.map(it => {
+      const sub = it.price * it.qty;
+      total += sub;
+      return `${it.name} ${it.size} × ${it.qty}枚　¥${sub.toLocaleString()}`;
+    });
+    lines.unshift('📷 写真：' + photoNums);
+    if (summaryEl) summaryEl.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+
+    // 割引計算（memberDataから取得）
+    const rank = memberData && memberData.rank ? memberData.rank : 'REGULAR';
+    const discountMap = { REGULAR: 0, SILVER: 5, GOLD: 10, PLATINUM: 15 };
+    const rate = discountMap[rank] || 0;
+    orderState.discountRate = rate;
+    const discounted = Math.floor(total * (1 - rate / 100));
+
+    if (rate > 0) {
+      if (totalOrigEl) { totalOrigEl.textContent = '¥' + total.toLocaleString(); totalOrigEl.style.display = 'block'; }
+      if (totalEl) totalEl.textContent = '¥' + discounted.toLocaleString() + '（' + rank + ' ' + rate + '%割引）';
+    } else {
+      if (totalOrigEl) totalOrigEl.style.display = 'none';
+      if (totalEl) totalEl.textContent = '¥' + total.toLocaleString();
+    }
+    orderState._total = total;
+    orderState._discounted = discounted;
+  }
+
+  function selectDelivery(type) {
+    orderState.delivery = type;
+    const storeBtn = document.getElementById('delBtn_store');
+    const mailBtn = document.getElementById('delBtn_mail');
+    const addrField = document.getElementById('addressField');
+    if (type === '店頭受け取り') {
+      if (storeBtn) { storeBtn.style.borderColor = '#68c0d3'; storeBtn.style.background = '#f0fafb'; storeBtn.style.color = '#4a9db0'; storeBtn.style.fontWeight = '600'; }
+      if (mailBtn) { mailBtn.style.borderColor = '#ddd'; mailBtn.style.background = '#fff'; mailBtn.style.color = '#aaa'; mailBtn.style.fontWeight = 'normal'; }
+      if (addrField) addrField.style.display = 'none';
+    } else {
+      if (mailBtn) { mailBtn.style.borderColor = '#68c0d3'; mailBtn.style.background = '#f0fafb'; mailBtn.style.color = '#4a9db0'; mailBtn.style.fontWeight = '600'; }
+      if (storeBtn) { storeBtn.style.borderColor = '#ddd'; storeBtn.style.background = '#fff'; storeBtn.style.color = '#aaa'; storeBtn.style.fontWeight = 'normal'; }
+      if (addrField) addrField.style.display = 'block';
+    }
+  }
+
+  async function proceedToSquare() {
+    if (orderState.delivery === '郵送') {
+      const addr = document.getElementById('orderAddress').value.trim();
+      if (!addr) { alert('配送先住所を入力してください'); return; }
+    }
+
+    // 複数商品の場合は最初のSquare URLを使用、複数URLは備考に含める
+    const mainItem = orderState.selectedItems[0];
+    if (!mainItem || !mainItem.squareUrl) {
+      alert('Square決済URLが設定されていません。店舗にお問い合わせください。');
+      return;
+    }
+
+    // 注文データをGASに保存
+    try {
+      const items = orderState.selectedItems.map(it => ({ name: it.name, size: it.size, price: it.price, qty: it.qty }));
+      const photoIndexes = orderState.selectedPhotos.map(p => p.no);
+      const addr = orderState.delivery === '郵送' ? (document.getElementById('orderAddress').value.trim()) : '';
+      const note = document.getElementById('orderNote').value.trim();
+
+      await gasPost('createOrder', {
+        lineUserId: lineProfile ? lineProfile.userId : '',
+        memberName: memberData ? (memberData.name || '') : '',
+        reservationId: orderState.reservationId,
+        items, photoIndexes,
+        delivery: orderState.delivery,
+        address: addr,
+        totalPrice: orderState._total,
+        note,
+      });
+    } catch(e) { console.log('注文保存エラー:', e); }
+
+    // Square決済ページへ
+    const url = mainItem.squareUrl;
+    closeOrderModal();
+    window.open(url, '_blank');
+  }
+
+  // 画像タップでフルスクリーン表示
+  function openDocViewer(src, label) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+    overlay.innerHTML = `
+      <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="color:#fff;font-size:13px;font-weight:600;">${label}</span>
+        <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:4px;">✕</button>
+      </div>
+      <img src="${src}" style="max-width:100%;max-height:80vh;border-radius:10px;object-fit:contain;">
+      <div style="color:#aaa;font-size:11px;margin-top:12px;">ピンチで拡大できます</div>`;
+    document.body.appendChild(overlay);
+  }
+
+  function loadMemberCard() {
+    if (!lineProfile) return;
+    const cb = 'cb_member_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      if (json.status === 'success') {
+        memberData = json.data;
+        renderMemberCard();
+      } else if (json.status === 'notfound') {
+        // 自動登録
+        registerMemberAuto();
+      }
+    };
+    s.src = GAS_URL + '?action=getMember&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function registerMemberAuto() {
+    if (!lineProfile) return;
+    const cb = 'cb_reg_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      // 登録後に再取得
+      loadMemberCard();
+    };
+    const params = encodeURIComponent(JSON.stringify({ lineUserId: lineProfile.userId, name: lineProfile.displayName }));
+    s.src = GAS_URL + '?action=registerMember&params=' + params + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderMemberCard() {
+    if (!memberData) return;
+    const RANK_NEXT = { 'ノーマル': { next: 'シルバー', need: 2 }, 'シルバー': { next: 'ゴールド', need: 5 }, 'ゴールド': { next: 'プラチナ', need: 10 }, 'プラチナ': null };
+    const rankInfo = RANK_NEXT[memberData.rank];
+    const progressPct = rankInfo ? Math.min(100, Math.round((memberData.visitCount / rankInfo.need) * 100)) : 100;
+
+    document.getElementById('memberCardContent').innerHTML = `
+      <div class="member-card-wrap">
+        <div class="member-card-logo">studio TSUZURI</div>
+        <div class="member-card-name">${memberData.name}</div>
+        <div class="member-card-rank">✦ ${memberData.rank} ✦</div>
+        <div class="member-card-points">
+          <div class="member-card-pt">
+            <div class="member-card-pt-num">${memberData.point}</div>
+            <div class="member-card-pt-label">POINT</div>
+          </div>
+          <div class="member-card-pt">
+            <div class="member-card-pt-num">${memberData.visitCount}</div>
+            <div class="member-card-pt-label">VISITS</div>
           </div>
         </div>
-      `).join('')}
+        ${rankInfo ? `
+        <div class="rank-progress-wrap">
+          <div class="rank-progress-label">
+            <span>${memberData.rank}</span>
+            <span>次のランク：${rankInfo.next}（あと${rankInfo.need - memberData.visitCount}回）</span>
+          </div>
+          <div class="rank-progress-bar">
+            <div class="rank-progress-fill" style="width:${progressPct}%;"></div>
+          </div>
+        </div>` : '<div style="margin-top:10px;font-size:11px;opacity:0.8;">✨ 最高ランク達成！</div>'}
+      </div>
+
+      <div style="background:#fff;border-radius:14px;padding:14px;font-size:12px;color:#888;line-height:2;">
+        <div style="font-size:13px;font-weight:600;color:#444;margin-bottom:10px;">ランク特典</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">🤍</span>
+            <div><span style="font-weight:600;color:#888;">ノーマル</span>　— </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">🥈</span>
+            <div><span style="font-weight:600;color:#777;">シルバー</span>（2回〜）　優先予約</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">🥇</span>
+            <div><span style="font-weight:600;color:#c9a84c;">ゴールド</span>（5回〜）　優先予約 ＋ 撮影データ延長保管</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="min-width:20px;">💎</span>
+            <div><span style="font-weight:600;color:#6a7fc8;">プラチナ</span>（10回〜）　優先予約 ＋ データ延長保管 ＋ 特別割引クーポン</div>
+          </div>
+        </div>
+      </div>
     `;
   }
 
-  function openIssueCouponForMember(lineUserId, name) {
-    switchTab('coupons', document.querySelector('.tab:nth-child(10)') || document.querySelectorAll('.tab')[9]);
-    loadAllCoupons();
-    document.getElementById('couponUserId').value = lineUserId;
-    document.getElementById('couponName').focus();
-    showToast(name + ' さんへのクーポン発行画面に移動しました');
-  }
-
-  // ==========================================
-  // クーポン管理
-  // ==========================================
-  let allCouponsData = [];
-
-  function loadAllCoupons() {
-    const list = document.getElementById('couponList');
-    if (!list) return;
-    list.innerHTML = '<div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>読み込み中</div>';
-    const cb = 'cb_coupons_' + Date.now();
+  function loadMemberCoupons() {
+    if (!lineProfile) return;
+    // ポイント交換パネルの現在ポイント表示更新
+    if (memberData) {
+      const ptEl = document.getElementById('redeemCurrentPt');
+      if (ptEl) ptEl.textContent = (memberData.points || 0) + ' pt';
+    }
+    const cb = 'cb_coup_' + Date.now();
     const s = document.createElement('script');
     window[cb] = (json) => {
       if (document.body.contains(s)) document.body.removeChild(s);
       delete window[cb];
-      allCouponsData = json.data || [];
-      renderCoupons();
+      memberCoupons = json.data || [];
+      renderMemberCoupons();
     };
-    s.src = GAS_URL + '?action=getAllCoupons&callback=' + cb;
-    s.onerror = () => { if (document.body.contains(s)) document.body.removeChild(s); delete window[cb]; };
+    s.src = GAS_URL + '?action=getCoupons&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
     document.body.appendChild(s);
   }
 
-  function renderCoupons() {
-    const list = document.getElementById('couponList');
+  function redeemPointCoupon() {
+    if (!lineProfile) return;
+    const currentPt = memberData ? (memberData.points || 0) : 0;
+    if (currentPt < 500) {
+      alert('ポイントが不足しています（500pt必要、現在' + currentPt + 'pt）'); return;
+    }
+    if (!confirm('500ptを消費して500円割引クーポンに交換しますか？')) return;
+    const cb = 'cb_redeem_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      if (json.status === 'success') {
+        alert('✅ ' + json.message);
+        // ポイントと一覧を更新
+        if (memberData) memberData.points = json.remainPoints;
+        const ptEl = document.getElementById('redeemCurrentPt');
+        if (ptEl) ptEl.textContent = json.remainPoints + ' pt';
+        loadMemberCoupons();
+        loadMemberCard();
+      } else {
+        alert('エラー: ' + (json.message || '不明'));
+      }
+    };
+    const params = encodeURIComponent(JSON.stringify({ lineUserId: lineProfile.userId }));
+    s.src = GAS_URL + '?action=redeemPointCoupon&params=' + params + '&callback=' + cb;
+    document.body.appendChild(s);
+  }
+
+  function renderMemberCoupons() {
+    const list = document.getElementById('memberCouponList');
     if (!list) return;
-    if (allCouponsData.length === 0) {
-      list.innerHTML = '<div class="empty">クーポンがありません</div>';
+    if (memberCoupons.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:13px;">利用可能なクーポンがありません</div>';
       return;
     }
-    list.innerHTML = allCouponsData.map(c => {
-      const used = c.used === '使用済';
-      return `
-        <div class="coupon-card${used ? ' used' : ''}">
-          <div style="font-size:20px;">🎁</div>
-          <div class="coupon-info">
-            <div class="coupon-name">${c.name}</div>
-            <div class="coupon-meta">
-              割引：${c.discount}　${c.expiry ? '期限：' + c.expiry : '期限なし'}<br>
-              対象：${c.lineUserId.slice(0,12)}…　${used ? '✅ 使用済' : '🟢 未使用'}
-            </div>
-          </div>
-          <div style="flex-shrink:0;">
-            ${!used ? `<button class="btn-small danger" onclick="deleteCouponItem('${c.id}')">削除</button>` : ''}
-          </div>
-        </div>`;
-    }).join('');
+    list.innerHTML = memberCoupons.map(c => `
+      <div class="coupon-item">
+        <div class="coupon-item-icon">🎁</div>
+        <div>
+          <div class="coupon-item-name">${c.name}</div>
+          <div class="coupon-item-detail">割引：${c.discount}${c.expiry ? '　期限：' + c.expiry : ''}</div>
+        </div>
+      </div>`).join('');
   }
 
-  async function issueCoupon() {
-    const lineUserId = document.getElementById('couponUserId').value.trim();
-    const name = document.getElementById('couponName').value.trim();
-    const discount = document.getElementById('couponDiscount').value.trim();
-    const expiry = document.getElementById('couponExpiry').value;
-    if (!name) { alert('クーポン名を入力してください。'); return; }
-    if (!discount) { alert('割引内容を入力してください。'); return; }
-
-    // 全員対象
-    const targets = lineUserId ? [lineUserId] : allMembers.map(m => m.lineUserId);
-    if (targets.length === 0) {
-      alert('会員データがありません。先に会員タブを開いて読み込んでください。');
-      return;
-    }
-
-    showLoading('クーポンを発行しています...');
-    let success = 0;
-    for (const uid of targets) {
-      try {
-        const json = await gasPost('addCoupon', { lineUserId: uid, name, discount, expiry, note: '' });
-        if (json.status === 'success') success++;
-      } catch(e) {}
-    }
-    hideLoading();
-    alert(`✅ ${success}件のクーポンを発行しました。`);
-    document.getElementById('couponName').value = '';
-    document.getElementById('couponDiscount').value = '';
-    document.getElementById('couponExpiry').value = '';
-    loadAllCoupons();
+  function loadReferralCode() {
+    if (!lineProfile) return;
+    const el = document.getElementById('referralCodeDisplay');
+    const cb = 'cb_ref_' + Date.now();
+    const s = document.createElement('script');
+    window[cb] = (json) => {
+      if (document.body.contains(s)) document.body.removeChild(s);
+      delete window[cb];
+      if (json.status === 'success') {
+        el.textContent = json.code;
+      } else {
+        el.textContent = '読込失敗';
+      }
+    };
+    s.src = GAS_URL + '?action=getReferralCode&lineUserId=' + encodeURIComponent(lineProfile.userId) + '&callback=' + cb;
+    document.body.appendChild(s);
   }
 
-  async function deleteCouponItem(id) {
-    if (!confirm('このクーポンを削除しますか？')) return;
-    try {
-      const json = await gasPost('deleteCoupon', { id });
-      if (json.status === 'success') { loadAllCoupons(); }
-      else alert('エラー: ' + (json.message || '不明'));
-    } catch(e) { alert('通信エラー'); }
-  }
-
-  // ==========================================
-  // トースト通知
-  // ==========================================
-  function showToast(msg) {
-    let toast = document.getElementById('toastMsg');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'toastMsg';
-      toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2d35;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;';
-      document.body.appendChild(toast);
+  function shareReferral() {
+    const code = document.getElementById('referralCodeDisplay').textContent;
+    if (!code || code === '読込中...') return;
+    if (liff.isApiAvailable('shareTargetPicker')) {
+      liff.shareTargetPicker([{
+        type: 'text',
+        text: '📷 studio TSUZURI で素敵な撮影を体験しました！\n\n初回予約時にこの紹介コードを入力すると特典があります👇\n\n紹介コード：' + code + '\n\nhttps://studio-tsuzuri.com/',
+      }]);
+    } else {
+      // フォールバック：コピー
+      navigator.clipboard.writeText(code).then(() => alert('紹介コードをコピーしました！\n' + code));
     }
-    toast.textContent = msg;
-    toast.style.opacity = '1';
-    setTimeout(() => { toast.style.opacity = '0'; }, 2500);
   }
 
   init();
